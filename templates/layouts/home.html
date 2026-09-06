@@ -1,0 +1,40 @@
+---
+layout: base
+---
+<section class="hero">
+  <div class="hero-t">
+    <span class="hero-badge">{% include "icon.html" name="fire" %} 새 글 {{ site.postCount }}개</span>
+    <h1>{{ site.title }}</h1>
+    <p>{{ site.description }}</p>
+    <div class="hero-btns">
+      <a class="btn" href="{{ "/archive/" | url }}">글목록 보기</a>
+      <a class="btn ghost" href="{{ "/about/" | url }}">블로그 소개</a>
+    </div>
+  </div>
+  <div class="hero-art" aria-hidden="true"><i></i><i></i><i></i></div>
+</section>
+
+{% if page.showPinned %}{% if pinned %}
+<section class="block">
+  <h2 class="sec-t">{% include "icon.html" name="pin" %} 고정된 글</h2>
+  <div class="grid two">
+    {% for post in pinned | limit: 2 %}{% include "post-card.html" post=post %}{% end %}
+  </div>
+</section>
+{% end %}{% end %}
+
+<section class="block">
+  <div class="block-head">
+    <h2 class="sec-t">{% include "icon.html" name="list" %} 최신 글</h2>
+    <div class="vtoggle" role="group" aria-label="보기 방식">
+      <button type="button" data-view="grid" class="on" aria-label="카드형">{% include "icon.html" name="grid" %}</button>
+      <button type="button" data-view="rows" aria-label="목록형">{% include "icon.html" name="list" %}</button>
+    </div>
+  </div>
+
+  <div class="grid" id="postGrid">
+    {% for post in page.paginator.items %}{% include "post-card.html" post=post %}{% end %}
+  </div>
+
+  {% include "pager.html" paginator=page.paginator %}
+</section>

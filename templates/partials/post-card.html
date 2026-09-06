@@ -1,0 +1,22 @@
+<article class="card">
+  <a class="card-a" href="{{ post.url | url }}">
+    <div class="card-thumb{% if not post.image %} noimg{% end %}">
+      {% if post.image %}<img src="{{ post.image | url }}" alt="{{ post.title }}" loading="lazy" decoding="async">
+      {% else %}<span class="thumb-ch">{{ post.title | first }}</span>{% end %}
+      {% if post.pinned %}<span class="thumb-pin">{% include "icon.html" name="pin" %}</span>{% end %}
+    </div>
+    <div class="card-body">
+      <span class="badge">{{ post.category }}</span>
+      <h3 class="card-title">{{ post.title }}</h3>
+      <p class="card-desc">{{ post.excerpt }}</p>
+      <div class="card-meta">
+        <time datetime="{{ post.iso }}">{% include "icon.html" name="calendar" %}{{ post.dateLabel }}</time>
+        <span>{% include "icon.html" name="clock" %}{{ post.readingTime }}분</span>
+        <span class="views" data-views="{{ post.url }}">{% include "icon.html" name="eye" %}<b>–</b></span>
+      </div>
+      {% if post.tags %}
+      <div class="card-tags">{% for t in post.tags | limit: 3 %}<span class="tag">#{{ t }}</span>{% end %}</div>
+      {% end %}
+    </div>
+  </a>
+</article>

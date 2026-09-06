@@ -1,0 +1,18 @@
+---
+layout: base
+---
+<article class="paper">
+  <nav class="crumb" aria-label="현재 위치">
+    <a href="{{ "/" | url }}">홈</a><span>/</span>
+    <a href="{{ "/categories/" | url }}">게시판</a><span>/</span><b>{{ page.title }}</b>
+  </nav>
+  <header class="paper-h">
+    {% if page.badge %}<span class="badge">{{ page.badge }}</span>{% end %}
+    <h1>{{ page.title }}</h1>
+    {% if page.subtitle %}<p class="paper-sub">{{ page.subtitle }}</p>{% end %}
+  </header>
+
+  <div class="grid">
+    {% for post in page.items %}{% include "post-card.html" post=post %}{% end %}
+  </div>
+</article>

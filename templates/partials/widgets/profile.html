@@ -1,0 +1,16 @@
+<section class="widget w-profile">
+  <div class="prof">
+    <img class="avatar" src="{{ site.author.avatar | url }}" alt="{{ site.author.name }}" width="76" height="76">
+    <b class="p-name">{{ site.author.name }}</b>
+    <p class="p-bio">{{ site.author.bio }}</p>
+    <div class="p-stat">
+      <a href="{{ "/archive/" | url }}"><b>{{ site.postCount }}</b><span>글</span></a>
+      <a href="{{ "/categories/" | url }}"><b>{{ site.categoryCount }}</b><span>게시판</span></a>
+      <a href="{{ "/tags/" | url }}"><b>{{ site.tagCount }}</b><span>태그</span></a>
+    </div>
+    <div class="p-links">
+      <a href="https://github.com/{{ site.author.github }}" target="_blank" rel="noopener">{% include "icon.html" name="github" %} GitHub</a>
+      {% if site.author.email %}<a href="mailto:{{ site.author.email }}">{% include "icon.html" name="mail" %} Email</a>{% end %}
+    </div>
+  </div>
+</section>

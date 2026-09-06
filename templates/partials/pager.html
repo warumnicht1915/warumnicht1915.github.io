@@ -1,0 +1,12 @@
+{% if paginator.totalPages > 1 %}
+<nav class="pager" aria-label="페이지 이동">
+  {% if paginator.prevUrl %}<a class="pg" href="{{ paginator.prevUrl | url }}">← 이전</a>
+  {% else %}<span class="pg off">← 이전</span>{% end %}
+  {% for n in paginator.numbers %}
+    {% if n.current %}<span class="pg num on" aria-current="page">{{ n.n }}</span>
+    {% else %}<a class="pg num" href="{{ n.url | url }}">{{ n.n }}</a>{% end %}
+  {% end %}
+  {% if paginator.nextUrl %}<a class="pg" href="{{ paginator.nextUrl | url }}">다음 →</a>
+  {% else %}<span class="pg off">다음 →</span>{% end %}
+</nav>
+{% end %}

@@ -1,0 +1,20 @@
+<button class="chat-fab" id="chatFab" type="button" aria-label="실시간 채팅 열기" aria-expanded="false">
+  {% include "icon.html" name="chat" %}<span class="fab-dot" id="chatDot" hidden></span>
+</button>
+
+<div class="chat-panel" id="chatPanel" role="dialog" aria-label="실시간 채팅" hidden>
+  <div class="chat-head">
+    <div class="chat-title">
+      <b>{% include "icon.html" name="chat" %} 실시간 채팅</b>
+      <span class="chat-on"><i class="pulse"></i><em id="chatOnline">–</em>명 접속 중</span>
+    </div>
+    <button class="ibtn" id="chatClose" type="button" aria-label="채팅 닫기">{% include "icon.html" name="x" %}</button>
+  </div>
+  <p class="chat-mode" id="chatMode" hidden></p>
+  <ul class="chat-log" id="chatLog" aria-live="polite"></ul>
+  <form class="chat-form" id="chatForm" autocomplete="off">
+    <input type="text" id="chatNick" maxlength="12" placeholder="닉네임" aria-label="닉네임">
+    <input type="text" id="chatText" maxlength="300" placeholder="메시지를 입력하세요" aria-label="메시지 입력">
+    <button type="submit" aria-label="보내기">{% include "icon.html" name="send" %}</button>
+  </form>
+</div>

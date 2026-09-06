@@ -1,0 +1,4 @@
+[
+  { "text": "블로그를 열었습니다.", "url": "/posts/hello-blog/", "date": "2026-09-06" },
+  { "text": "댓글은 GitHub 계정으로 바로 남길 수 있어요.", "url": "/guestbook/", "date": "2026-09-06" }
+]

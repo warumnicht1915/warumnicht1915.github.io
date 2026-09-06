@@ -1,0 +1,14 @@
+<section class="widget w-pop">
+  <h3 class="w-t">{% include "icon.html" name="fire" %} 인기 글 <small>조회수</small></h3>
+  <ol class="rank-l" id="popularList">
+    {% for p in popular %}
+    <li data-url="{{ p.url }}">
+      <a href="{{ p.url | url }}">
+        <span class="rk">{{ loop.index }}</span>
+        <span class="rk-t">{{ p.title }}</span>
+        <span class="rk-v" data-views="{{ p.url }}">–</span>
+      </a>
+    </li>
+    {% end %}
+  </ol>
+</section>

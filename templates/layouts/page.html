@@ -1,0 +1,12 @@
+---
+layout: base
+---
+<article class="paper">
+  <header class="paper-h">
+    {% if page.badge %}<span class="badge">{{ page.badge }}</span>{% end %}
+    <h1>{{ page.title }}</h1>
+    {% if page.subtitle %}<p class="paper-sub">{{ page.subtitle }}</p>{% end %}
+  </header>
+  <div class="prose">{{ content }}</div>
+  {% if page.comments %}{% include "comments.html" %}{% end %}
+</article>

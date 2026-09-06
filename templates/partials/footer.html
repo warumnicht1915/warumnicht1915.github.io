@@ -1,0 +1,27 @@
+<footer class="site-footer">
+  <div class="wrap foot-in">
+    <div class="f-brand">
+      <b>{{ site.title }}</b>
+      <p>{{ site.description }}</p>
+      <small>Gaon 엔진으로 직접 만든 정적 블로그 · 마지막 빌드 {{ site.buildTime }}</small>
+    </div>
+    <nav class="f-nav" aria-label="푸터 메뉴">
+      <b>메뉴</b>
+      {% for item in nav %}<a href="{{ item.url | url }}">{{ item.title }}</a>{% end %}
+    </nav>
+    <div class="f-nav">
+      <b>둘러보기</b>
+      {% for l in links %}<a href="{{ l.url | url }}">{{ l.title }}</a>{% end %}
+    </div>
+    <div class="f-social">
+      <a href="https://github.com/{{ site.author.github }}" target="_blank" rel="noopener" aria-label="GitHub">{% include "icon.html" name="github" %}</a>
+      {% if site.author.email %}<a href="mailto:{{ site.author.email }}" aria-label="이메일">{% include "icon.html" name="mail" %}</a>{% end %}
+      <a href="{{ "/feed.xml" | url }}" aria-label="RSS">{% include "icon.html" name="rss" %}</a>
+    </div>
+  </div>
+  <div class="wrap copy">
+    <span>© {{ site.year }} {{ site.author.name }}</span>
+    <span id="footVisitors" class="foot-v"></span>
+  </div>
+</footer>
+<button class="to-top" id="toTop" type="button" aria-label="맨 위로">{% include "icon.html" name="up" %}</button>

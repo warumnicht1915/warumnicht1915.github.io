@@ -1,0 +1,20 @@
+---
+title: 검색
+subtitle: 제목·본문·태그를 한 번에 찾습니다.
+permalink: /search/
+layout: page
+script: /assets/js/search.js
+---
+<form class="big-search" id="searchForm" role="search">
+  {% include "icon.html" name="search" %}
+  <input type="search" id="searchInput" name="q" placeholder="검색어를 입력하세요" aria-label="검색어" autocomplete="off">
+  <button type="submit">검색</button>
+</form>
+
+<p class="search-status" id="searchStatus">검색어를 입력해 보세요.</p>
+<div class="grid" id="searchResults"></div>
+
+<div class="trend-inline">
+  <b>{% include "icon.html" name="fire" %} 지금 많이 찾는 검색어</b>
+  <div class="chips" id="trendChips"></div>
+</div>

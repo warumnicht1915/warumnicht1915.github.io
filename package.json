@@ -1,0 +1,18 @@
+{
+  "name": "warumnicht-blog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "직접 만든 정적 사이트 생성기 Gaon 으로 돌아가는 개인 블로그 (외부 의존성 0)",
+  "author": "warumnicht1915",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --serve --watch",
+    "draft": "node build.js --serve --watch --drafts",
+    "check": "node tools/check.js",
+    "new": "node tools/new-post.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

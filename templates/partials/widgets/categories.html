@@ -1,0 +1,10 @@
+<section class="widget w-cats">
+  <h3 class="w-t">{% include "icon.html" name="folder" %} 게시판</h3>
+  <ul class="cat-l">
+    <li class="all"><a href="{{ "/archive/" | url }}"><span>전체 글</span><em>{{ site.postCount }}</em></a></li>
+    {% for c in categories %}
+    <li><a href="{{ c.slug | catUrl }}"{% if page.title == c.name %} class="on"{% end %}>
+      {% include "icon.html" name="right" %}<span>{{ c.name }}</span><em>{{ c.count }}</em></a></li>
+    {% end %}
+  </ul>
+</section>

@@ -1,0 +1,10 @@
+{% if page.showToc %}
+<nav class="toc" id="toc" aria-label="목차">
+  <b class="toc-t">{% include "icon.html" name="list" %} 목차</b>
+  <ol>
+    {% for h in page.toc %}
+    <li class="lv{{ h.level }}"><a href="#{{ h.id }}">{{ h.text }}</a></li>
+    {% end %}
+  </ol>
+</nav>
+{% end %}

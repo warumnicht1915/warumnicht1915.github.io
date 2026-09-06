@@ -1,0 +1,17 @@
+<section class="widget w-search">
+  <h3 class="w-t">{% include "icon.html" name="search" %} 검색</h3>
+  <form class="side-search" action="{{ "/search/" | url }}" method="get" role="search">
+    <input type="search" name="q" placeholder="무엇이든 찾아보세요" aria-label="블로그 검색">
+    <button type="submit" aria-label="검색">{% include "icon.html" name="search" %}</button>
+  </form>
+
+  <div class="trend" id="trendBox">
+    <div class="trend-h">
+      <b>{% include "icon.html" name="fire" %} 인기 검색어</b>
+      <span id="trendStamp">집계 중</span>
+    </div>
+    <ol class="trend-l" id="trendList" aria-live="polite">
+      <li class="sk"></li><li class="sk"></li><li class="sk"></li><li class="sk"></li><li class="sk"></li>
+    </ol>
+  </div>
+</section>

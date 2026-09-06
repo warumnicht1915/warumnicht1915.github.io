@@ -1,0 +1,8 @@
+[
+  { "title": "홈",     "url": "/",           "icon": "home" },
+  { "title": "글목록",  "url": "/archive/",   "icon": "list" },
+  { "title": "게시판",  "url": "/categories/","icon": "folder" },
+  { "title": "태그",    "url": "/tags/",      "icon": "tag" },
+  { "title": "방명록",  "url": "/guestbook/", "icon": "chat" },
+  { "title": "소개",    "url": "/about/",     "icon": "user" }
+]

@@ -1,0 +1,53 @@
+{
+  "title": "warumnicht1915",
+  "subtitle": "기록 보관소",
+  "description": "읽고 만든 것을 기록합니다.",
+  "url": "https://warumnicht1915.github.io",
+  "baseurl": "",
+  "lang": "ko",
+  "locale": "ko_KR",
+  "permalink": "/posts/:slug/",
+  "perPage": 6,
+  "showDrafts": false,
+  "author": {
+    "name": "warumnicht1915",
+    "bio": "기록하고 공유합니다.",
+    "avatar": "/assets/img/avatar.svg",
+    "github": "warumnicht1915",
+    "email": "warumnicht1915@gmail.com"
+  },
+  "comments": {
+    "provider": "giscus",
+    "giscus": {
+      "repo": "warumnicht1915/warumnicht1915.github.io",
+      "repoId": "",
+      "category": "Comments",
+      "categoryId": "",
+      "mapping": "pathname",
+      "reactionsEnabled": "1",
+      "inputPosition": "top",
+      "lang": "ko"
+    }
+  },
+  "realtime": {
+    "provider": "firebase",
+    "firebase": {
+      "apiKey": "",
+      "databaseURL": "",
+      "projectId": ""
+    },
+    "room": "main",
+    "maxMessages": 100,
+    "nickMaxLength": 12,
+    "textMaxLength": 300
+  },
+  "counter": {
+    "enabled": true,
+    "namespace": "warumnicht1915-blog"
+  },
+  "widgets": {
+    "trendsSize": 10,
+    "recentSize": 5,
+    "popularSize": 6
+  }
+}

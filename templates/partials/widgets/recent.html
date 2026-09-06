@@ -1,0 +1,11 @@
+<section class="widget w-recent">
+  <h3 class="w-t">{% include "icon.html" name="clock" %} 최근 업로드된 글</h3>
+  <ul class="mini-l">
+    {% for p in recent %}
+    <li><a href="{{ p.url | url }}">
+      <span class="mini-t">{{ p.title }}</span>
+      <span class="mini-m"><time datetime="{{ p.iso }}">{{ p.dateLabel }}</time><i></i><em>{{ p.category }}</em></span>
+    </a></li>
+    {% end %}
+  </ul>
+</section>

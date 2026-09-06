@@ -1,0 +1,53 @@
+# 직접 만든 Gaon 빌더로 사이트를 만들어 GitHub Pages 에 배포한다.
+# main 브랜치에 푸시하면 자동 실행되고, Actions 탭에서 수동 실행도 가능하다.
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 의존성이 없으므로 install 단계가 아예 필요 없다
+      - name: 사이트 빌드
+        run: node build.js
+
+      - name: 빌드 결과 점검
+        run: node tools/check.js
+
+      # Pages 가 꺼져 있으면 여기서 자동으로 켜고 소스를 GitHub Actions 로 잡는다
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

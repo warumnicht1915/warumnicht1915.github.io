@@ -1,0 +1,28 @@
+---
+title: 태그
+subtitle: 관심 있는 주제만 골라서 보세요.
+permalink: /tags/
+layout: page
+---
+<div class="cloud big">
+  {% for t in tags %}
+  <a class="tag{% if t.count > 4 %} big{% elif t.count > 2 %} mid{% end %}" href="{{ t.slug | tagUrl }}">#{{ t.name }}<i>{{ t.count }}</i></a>
+  {% empty %}
+  <p class="empty-msg">아직 태그가 없습니다.</p>
+  {% end %}
+</div>
+
+{% for t in tags %}
+<section class="block">
+  <h2 class="sec-t">#{{ t.name }} <small>{{ t.count }}</small></h2>
+  <ul class="row-l">
+    {% for post in t.posts %}
+    <li class="row-item"><a href="{{ post.url | url }}">
+      <time datetime="{{ post.iso }}">{{ post.dateLabel }}</time>
+      <span class="row-title">{{ post.title }}</span>
+      <span class="row-cat">{{ post.category }}</span>
+    </a></li>
+    {% end %}
+  </ul>
+</section>
+{% end %}

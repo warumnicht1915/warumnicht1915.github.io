@@ -1,0 +1,34 @@
+---
+title: 게시판
+subtitle: 카테고리별로 글을 모아둔 게시판입니다.
+permalink: /categories/
+layout: page
+---
+<div class="board-grid">
+  {% for c in categories %}
+  <a class="board" href="{{ c.slug | catUrl }}">
+    <span class="board-ic">{% include "icon.html" name="folder" %}</span>
+    <b>{{ c.name }}</b>
+    <em>{{ c.count }}개의 글</em>
+    <small>최근: {{ c.latest.title | truncate: 30 }}</small>
+  </a>
+  {% empty %}
+  <p class="empty-msg">아직 게시판이 없습니다.</p>
+  {% end %}
+</div>
+
+{% for c in categories %}
+<section class="block">
+  <h2 class="sec-t">{% include "icon.html" name="folder" %} {{ c.name }} <small>{{ c.count }}</small></h2>
+  <ul class="row-l">
+    {% for post in c.posts | limit: 8 %}
+    <li class="row-item"><a href="{{ post.url | url }}">
+      <time datetime="{{ post.iso }}">{{ post.dateLabel }}</time>
+      <span class="row-title">{{ post.title }}</span>
+      <span class="row-cat">{{ post.readingTime }}분</span>
+    </a></li>
+    {% end %}
+  </ul>
+  {% if c.count > 8 %}<a class="more" href="{{ c.slug | catUrl }}">{{ c.name }} 전체 보기 →</a>{% end %}
+</section>
+{% end %}

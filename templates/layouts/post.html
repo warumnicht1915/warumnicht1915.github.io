@@ -1,0 +1,57 @@
+---
+layout: base
+---
+<article class="paper post">
+  <nav class="crumb" aria-label="현재 위치">
+    <a href="{{ "/" | url }}">홈</a><span>/</span>
+    <a href="{{ page.category | slugify | catUrl }}">{{ page.category }}</a><span>/</span>
+    <b>{{ page.title | truncate: 26 }}</b>
+  </nav>
+
+  <header class="paper-h">
+    <a class="badge" href="{{ page.category | slugify | catUrl }}">{{ page.category }}</a>
+    <h1>{{ page.title }}</h1>
+    {% if page.subtitle %}<p class="paper-sub">{{ page.subtitle }}</p>{% end %}
+    <div class="pmeta">
+      <span class="pm-au"><img src="{{ site.author.avatar | url }}" alt="" width="22" height="22">{{ site.author.name }}</span>
+      <time datetime="{{ page.iso }}">{% include "icon.html" name="calendar" %}{{ page.dateFull }}</time>
+      <span>{% include "icon.html" name="clock" %}{{ page.readingTime }}분 읽기</span>
+      <span class="views" data-views="{{ page.url }}">{% include "icon.html" name="eye" %}<b>–</b></span>
+    </div>
+  </header>
+
+  {% if page.image %}<figure class="cover"><img src="{{ page.image | url }}" alt="{{ page.title }}"></figure>{% end %}
+
+  {% include "toc.html" %}
+
+  <div class="prose" id="postBody">{{ content }}</div>
+
+  {% if page.tags %}
+  <div class="post-tags">
+    {% for t in page.tags %}<a class="tag mid" href="{{ t | slugify | tagUrl }}">#{{ t }}</a>{% end %}
+  </div>
+  {% end %}
+
+  <div class="share">
+    <b>{% include "icon.html" name="share" %} 공유하기</b>
+    <a href="https://twitter.com/intent/tweet?text={{ page.title | urlencode }}&url={{ page.url | abs | urlencode }}" target="_blank" rel="noopener">X</a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u={{ page.url | abs | urlencode }}" target="_blank" rel="noopener">Facebook</a>
+    <button type="button" id="copyLink" data-url="{{ page.url | abs }}">{% include "icon.html" name="link" %} 링크 복사</button>
+  </div>
+
+  <nav class="prevnext" aria-label="이전 다음 글">
+    {% if page.older %}<a class="pn" href="{{ page.older.url | url }}"><span>← 이전 글</span><b>{{ page.older.title }}</b></a>
+    {% else %}<span class="pn empty"></span>{% end %}
+    {% if page.newer %}<a class="pn right" href="{{ page.newer.url | url }}"><span>다음 글 →</span><b>{{ page.newer.title }}</b></a>
+    {% else %}<span class="pn empty"></span>{% end %}
+  </nav>
+
+  {% if page.related %}
+  <section class="block">
+    <h2 class="sec-t">함께 보면 좋은 글</h2>
+    <div class="grid two">{% for post in page.related %}{% include "post-card.html" post=post %}{% end %}</div>
+  </section>
+  {% end %}
+
+  {% if page.comments %}{% include "comments.html" %}{% end %}
+</article>

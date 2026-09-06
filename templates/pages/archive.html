@@ -1,0 +1,33 @@
+---
+title: 글목록
+subtitle: 지금까지 쓴 모든 글을 연도별로 모았습니다.
+permalink: /archive/
+layout: page
+script: /assets/js/archive.js
+---
+<div class="arc-tools">
+  <input type="search" id="arcFilter" placeholder="제목 · 태그 · 게시판으로 빠르게 거르기" aria-label="글 거르기">
+  <span class="arc-count"><b id="arcCount">{{ site.postCount }}</b>개의 글</span>
+</div>
+
+<div id="arcWrap">
+{% for y in archive %}
+  <section class="arc-y" data-year="{{ y.year }}">
+    <h2 class="arc-yt"><b>{{ y.year }}</b><span>{{ y.count }}개</span></h2>
+    <ul class="row-l">
+      {% for post in y.posts %}
+      <li class="row-item" data-k="{{ post.title | lower }} {{ post.tags | join: ' ' | lower }} {{ post.category | lower }}">
+        <a href="{{ post.url | url }}">
+          <time datetime="{{ post.iso }}">{{ post.monthDay }}</time>
+          <span class="row-title">{{ post.title }}</span>
+          <span class="row-cat">{{ post.category }}</span>
+        </a>
+      </li>
+      {% end %}
+    </ul>
+  </section>
+{% empty %}
+  <p class="empty-msg">아직 글이 없습니다.</p>
+{% end %}
+</div>
+<p class="empty-msg" id="arcEmpty" hidden>조건에 맞는 글이 없습니다.</p>

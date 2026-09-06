@@ -1,0 +1,31 @@
+<a class="skip" href="#main">본문 바로가기</a>
+<header class="site-header" id="siteHeader">
+  <div class="wrap head-in">
+    <a class="brand" href="{{ "/" | url }}">
+      <span class="brand-mark" aria-hidden="true">W</span>
+      <span class="brand-txt"><b>{{ site.title }}</b><em>{{ site.subtitle }}</em></span>
+    </a>
+
+    <nav class="gnb" id="gnb" aria-label="주 메뉴">
+      {% for item in nav %}
+      <a href="{{ item.url | url }}"{% if page.url == item.url %} class="on" aria-current="page"{% end %}>
+        {% include "icon.html" name=item.icon %}<span>{{ item.title }}</span>
+      </a>
+      {% end %}
+    </nav>
+
+    <div class="head-tools">
+      <form class="hsearch" action="{{ "/search/" | url }}" method="get" role="search">
+        {% include "icon.html" name="search" %}
+        <input type="search" name="q" placeholder="검색어를 입력하세요" aria-label="블로그 검색" autocomplete="off">
+      </form>
+      <button class="ibtn" id="themeBtn" type="button" aria-label="라이트/다크 전환" title="라이트 · 다크 전환">
+        {% include "icon.html" name="sun" %}{% include "icon.html" name="moon" %}
+      </button>
+      <button class="ibtn only-m" id="navBtn" type="button" aria-label="메뉴 열기" aria-expanded="false">
+        {% include "icon.html" name="menu" %}
+      </button>
+    </div>
+  </div>
+  <div class="progress" id="progress"><span></span></div>
+</header>

@@ -1,0 +1,10 @@
+{% if tags %}
+<section class="widget w-tags">
+  <h3 class="w-t">{% include "icon.html" name="tag" %} 태그</h3>
+  <div class="cloud">
+    {% for t in tags | limit: 24 %}
+    <a class="tag{% if t.count > 4 %} big{% elif t.count > 2 %} mid{% end %}" href="{{ t.slug | tagUrl }}">#{{ t.name }}<i>{{ t.count }}</i></a>
+    {% end %}
+  </div>
+</section>
+{% end %}
