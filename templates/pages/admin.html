@@ -1,0 +1,181 @@
+---
+title: 관리자
+subtitle: 글쓰기 · 수정 · 삭제와 사이트 설정을 여기서 합니다.
+permalink: /admin/
+layout: page
+wide: true
+noindex: true
+script: /assets/js/admin.js
+---
+
+<div class="admin" id="admin">
+
+  <!-- ── 로그인 ─────────────────────────────────────────── -->
+  <section class="ad-gate" id="adGate">
+    <div class="ad-gate-box">
+      <h2>{% include "icon.html" name="github" %} 관리자 로그인</h2>
+      <p class="ad-lead">
+        이 저장소에만 권한을 준 <b>Fine-grained 토큰</b>을 넣어주세요.
+        토큰은 이 브라우저에만 저장되며 어디로도 전송되지 않습니다
+        (GitHub API 호출에만 쓰입니다).
+      </p>
+
+      <details class="ad-help">
+        <summary>토큰 만드는 법 (1분)</summary>
+        <ol>
+          <li>GitHub → Settings → Developer settings → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → Generate new token</li>
+          <li><b>Repository access</b>: Only select repositories → 이 블로그 저장소 하나만 선택</li>
+          <li><b>Permissions</b> → Repository permissions → <b>Contents: Read and write</b> (이것 하나면 충분합니다)</li>
+          <li>만료일은 짧게 잡으세요. 만료되면 여기서 새 토큰으로 바꾸면 됩니다.</li>
+        </ol>
+        <p class="ad-warn">
+          공용 PC에서는 쓰지 마세요. 토큰이 브라우저에 남습니다.
+          자리를 뜰 때는 아래 <b>로그아웃</b>으로 지우세요.
+        </p>
+      </details>
+
+      <form id="adLoginForm" autocomplete="off">
+        <input type="password" id="adToken" placeholder="github_pat_..." aria-label="GitHub 토큰"
+               autocomplete="off" spellcheck="false">
+        <label class="ad-check"><input type="checkbox" id="adRemember" checked> 이 브라우저에 저장</label>
+        <button type="submit" class="btn ad-primary">연결하기</button>
+      </form>
+      <p class="ad-msg" id="adLoginMsg"></p>
+    </div>
+  </section>
+
+  <!-- ── 본체 ───────────────────────────────────────────── -->
+  <section class="ad-app" id="adApp" hidden>
+    <header class="ad-bar">
+      <div class="ad-who">
+        <img id="adAvatar" src="" alt="" width="26" height="26">
+        <b id="adUser">–</b>
+        <span id="adRepo" class="ad-repo"></span>
+      </div>
+      <nav class="ad-tabs" role="tablist">
+        <button type="button" data-tab="posts" class="on" role="tab">글 관리</button>
+        <button type="button" data-tab="write" role="tab">새 글</button>
+        <button type="button" data-tab="site" role="tab">프로필 · 설정</button>
+        <button type="button" data-tab="data" role="tab">메뉴 · 공지</button>
+      </nav>
+      <button type="button" class="ad-logout" id="adLogout">로그아웃</button>
+    </header>
+
+    <p class="ad-status" id="adStatus" hidden></p>
+
+    <!-- 글 관리 -->
+    <div class="ad-panel on" data-panel="posts">
+      <div class="ad-panel-head">
+        <h3>글 목록 <small id="adPostCount"></small></h3>
+        <button type="button" class="btn-line" id="adReload">새로고침</button>
+      </div>
+      <ul class="ad-list" id="adPostList"><li class="ad-empty">불러오는 중…</li></ul>
+    </div>
+
+    <!-- 새 글 / 수정 -->
+    <div class="ad-panel" data-panel="write">
+      <div class="ad-panel-head">
+        <h3 id="adEditTitle">새 글 쓰기</h3>
+        <div class="ad-actions">
+          <button type="button" class="btn-line" id="adPreviewBtn">미리보기</button>
+          <button type="button" class="btn ad-primary" id="adSave">발행하기</button>
+        </div>
+      </div>
+
+      <div class="ad-editor">
+        <form class="ad-form" id="adPostForm" autocomplete="off">
+          <label>제목 <input type="text" id="fTitle" required placeholder="글 제목"></label>
+          <label>부제 <input type="text" id="fSubtitle" placeholder="선택"></label>
+          <div class="ad-row">
+            <label>날짜 <input type="date" id="fDate"></label>
+            <label>시각 <input type="time" id="fTime"></label>
+          </div>
+          <div class="ad-row">
+            <label>게시판(카테고리) <input type="text" id="fCategory" list="adCats" placeholder="개발"></label>
+            <label>태그 <input type="text" id="fTags" placeholder="쉼표로 구분"></label>
+          </div>
+          <label>요약 <input type="text" id="fDesc" placeholder="검색·미리보기에 쓰입니다"></label>
+          <label>대표 이미지 <input type="text" id="fImage" placeholder="/assets/img/cover.png (선택)"></label>
+          <div class="ad-row ad-checks">
+            <label class="ad-check"><input type="checkbox" id="fPinned"> 홈 상단 고정</label>
+            <label class="ad-check"><input type="checkbox" id="fDraft"> 초안 (발행 안 함)</label>
+          </div>
+          <label class="ad-body">본문 (마크다운)
+            <textarea id="fBody" rows="20" spellcheck="false"
+              placeholder="여기에 본문을 씁니다.&#10;&#10;&lt;!--more--&gt; 위쪽이 목록 미리보기로 쓰입니다."></textarea>
+          </label>
+          <p class="ad-hint">
+            제목 <code>##</code> · 굵게 <code>**글자**</code> · 코드블록 <code>```js</code> ·
+            콜아웃 <code>&gt; [!TIP]</code> · 표 <code>| a | b |</code>
+          </p>
+        </form>
+
+        <div class="ad-preview" id="adPreview" hidden>
+          <div class="ad-preview-head">미리보기</div>
+          <article class="prose" id="adPreviewBody"></article>
+        </div>
+      </div>
+    </div>
+
+    <!-- 사이트 설정 -->
+    <div class="ad-panel" data-panel="site">
+      <div class="ad-panel-head">
+        <h3>프로필 · 사이트 설정</h3>
+        <button type="button" class="btn ad-primary" id="adSaveSite">설정 저장</button>
+      </div>
+      <form class="ad-form two" id="adSiteForm" autocomplete="off">
+        <label>블로그 제목 <input type="text" id="sTitle"></label>
+        <label>한 줄 소개 <input type="text" id="sSubtitle"></label>
+        <label class="wide">설명 (검색 결과에 노출) <input type="text" id="sDesc"></label>
+        <label>표시 이름 <input type="text" id="sAuthorName"></label>
+        <label>프로필 소개 <input type="text" id="sBio"></label>
+        <label>GitHub 아이디 <input type="text" id="sGithub"></label>
+        <label>공개 이메일 <input type="text" id="sEmail" placeholder="비워두면 메일 아이콘이 숨겨집니다"></label>
+        <label>프로필 이미지 경로 <input type="text" id="sAvatar"></label>
+        <label>한 페이지에 보일 글 수 <input type="number" id="sPerPage" min="1" max="30"></label>
+
+        <h4 class="ad-sub wide">댓글 (giscus)</h4>
+        <label>repoId <input type="text" id="gRepoId" placeholder="R_kgDO..."></label>
+        <label>categoryId <input type="text" id="gCatId" placeholder="DIC_kwDO..."></label>
+
+        <h4 class="ad-sub wide">실시간 기능</h4>
+        <label class="wide">Realtime Database 주소
+          <input type="text" id="rDbUrl" placeholder="https://프로젝트-default-rtdb.firebaseio.com">
+        </label>
+        <p class="ad-hint wide">비워두면 채팅·접속자·조회수가 이 브라우저 기준으로만 동작합니다.</p>
+      </form>
+    </div>
+
+    <!-- 메뉴 · 공지 -->
+    <div class="ad-panel" data-panel="data">
+      <div class="ad-panel-head">
+        <h3>메뉴 · 공지사항</h3>
+        <button type="button" class="btn ad-primary" id="adSaveData">저장</button>
+      </div>
+
+      <h4 class="ad-sub">공지사항</h4>
+      <ul class="ad-rows" id="adNoticeRows"></ul>
+      <button type="button" class="btn-line" id="adAddNotice">공지 추가</button>
+
+      <h4 class="ad-sub">상단 메뉴</h4>
+      <ul class="ad-rows" id="adNavRows"></ul>
+      <button type="button" class="btn-line" id="adAddNav">메뉴 추가</button>
+      <p class="ad-hint">아이콘 이름: home · list · folder · tag · chat · user · search · fire · clock</p>
+    </div>
+  </section>
+
+  <!-- 확인 모달 -->
+  <div class="ad-modal" id="adModal" hidden>
+    <div class="ad-modal-box" role="dialog" aria-modal="true">
+      <b id="adModalTitle">확인</b>
+      <p id="adModalText"></p>
+      <div class="ad-modal-btns">
+        <button type="button" class="btn-line" id="adModalNo">취소</button>
+        <button type="button" class="btn ad-danger" id="adModalYes">삭제</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="adCats"></datalist>
+<script src="{{ "/assets/js/gaon-md.js" | url }}" defer></script>

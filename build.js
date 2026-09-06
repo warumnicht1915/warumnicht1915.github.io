@@ -23,6 +23,64 @@ const OUT = path.join(ROOT, '_site');
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
 
+
+/* ─────────────── 엔진을 브라우저용으로 묶기 ─────────────── */
+/**
+ * 관리자 페이지의 마크다운 미리보기는 빌드에 쓰는 것과 **똑같은 파서**를 써야 한다.
+ * 그래서 engine/highlight.js 와 engine/markdown.js 를 읽어 require/exports 만 걷어내고
+ * 하나의 IIFE 로 감싸 window.GaonMD 로 노출한다. 번들러를 따로 쓰지 않는다.
+ */
+function browserBundle(root) {
+  const read = (f) => fs.readFileSync(path.join(root, 'engine', f), 'utf8');
+
+  const strip = (src) => src
+    .replace(/^'use strict';\s*$/m, '')
+    .replace(/^const \{[^}]*\} = require\([^)]*\);\s*$/gm, '')
+    .replace(/^const [\w$]+ = require\([^)]*\);\s*$/gm, '')
+    .replace(/^module\.exports\s*=[\s\S]*?;\s*$/m, '');
+
+  /** util.js 에서 최상위 함수 하나만 그대로 떼어 온다. */
+  const extractFn = (src, name) => {
+    const start = src.indexOf('function ' + name + '(');
+    if (start === -1) throw new Error('함수를 찾지 못했습니다: ' + name);
+    let depth = 0, i = src.indexOf('{', start);
+    for (let j = i; j < src.length; j++) {
+      if (src[j] === '{') depth++;
+      else if (src[j] === '}') { depth--; if (depth === 0) return src.slice(start, j + 1); }
+    }
+    throw new Error('함수 끝을 찾지 못했습니다: ' + name);
+  };
+
+  // 모듈마다 이름이 겹칠 수 있으므로(esc 등) 각자 자기 스코프에 가둔다.
+  return [
+    '/* 빌드 시 engine/ 에서 자동 생성됩니다. 직접 수정하지 마세요. */',
+    '(function (global) {',
+    "  'use strict';",
+    '',
+    'var slugify = (function () {',
+    extractFn(read('util.js'), 'slugify'),
+    '  return slugify;',
+    '})();',
+    '',
+    'var __hl = (function () {',
+    strip(read('highlight.js')),
+    '  return { highlight: highlight, normalize: normalize };',
+    '})();',
+    '',
+    'var __md = (function (highlight, slugify) {',
+    strip(read('markdown.js')),
+    '  return { render: render, inline: inline };',
+    '})(__hl.highlight, slugify);',
+    '',
+    '  global.GaonMD = {',
+    '    render: __md.render, inline: __md.inline,',
+    '    highlight: __hl.highlight, slugify: slugify',
+    '  };',
+    '})(window);',
+    '',
+  ].join('\n');
+}
+
 /* ─────────────────────────── 빌드 ─────────────────────────── */
 
 function build() {
@@ -89,6 +147,7 @@ function build() {
     // 클라이언트 스크립트에 넘길 설정 (JSON 으로 주입)
     clientConfig: {
       baseurl: base,
+      repo: (cfg.comments && cfg.comments.giscus && cfg.comments.giscus.repo) || '',
       firebase: cfg.realtime.firebase,
       room: cfg.realtime.room,
       chat: {
@@ -229,12 +288,14 @@ function build() {
       '  </item>').join('\n') +
     '\n</channel></rss>\n');
 
-  emit('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${absolute('/sitemap.xml')}\n`);
+  emit('robots.txt',
+    `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${absolute('/sitemap.xml')}\n`);
   emit('.nojekyll', '');
   if (cfg.cname) emit('CNAME', cfg.cname + '\n');
 
   /* 8) 정적 자원 복사 + 클라이언트 설정 주입 */
   const copied = u.copyDir(path.join(ROOT, 'static'), path.join(OUT, 'assets'));
+  u.writeFile(path.join(OUT, 'assets', 'js', 'gaon-md.js'), browserBundle(ROOT));
   u.writeFile(path.join(OUT, 'assets', 'js', 'config.js'),
     '/* 빌드 시 자동 생성됩니다. 직접 수정하지 마세요. */\n' +
     'window.GAON_CONFIG = ' + JSON.stringify(globals.clientConfig, null, 2) + ';\n');

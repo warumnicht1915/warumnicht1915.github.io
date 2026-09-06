@@ -5,6 +5,7 @@
 <title>{% if page.title %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }} — {{ site.subtitle }}{% end %}</title>
 <meta name="description" content="{{ page.description | default: site.description | truncate: 160 }}">
 <meta name="author" content="{{ site.author.name }}">
+{% if page.noindex %}<meta name="robots" content="noindex, nofollow">{% end %}
 <link rel="canonical" href="{{ page.url | abs }}">
 <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ "/feed.xml" | url }}">
 <link rel="icon" href="{{ "/assets/img/favicon.svg" | url }}" type="image/svg+xml">

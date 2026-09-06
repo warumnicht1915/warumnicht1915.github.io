@@ -1,0 +1,63 @@
+# 이슈로 글쓰기
+# ---------------------------------------------------------------
+# GitHub 이슈에 `post` 라벨을 붙이면 그 이슈를 글로 발행한다.
+#   열기/수정   → 글을 만들거나 갱신
+#   닫기        → 글을 저장소에서 삭제 (커밋 이력에는 남는다)
+#   다시 열기   → 글을 되살림
+# 토큰을 따로 만들 필요가 없고, 휴대폰 GitHub 앱에서도 글을 쓸 수 있다.
+name: 이슈로 글 발행
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled, closed, reopened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: publish-from-issue
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # 저장소 주인이 쓴, post 라벨이 붙은 이슈만 처리한다
+    if: >
+      github.event.issue.user.login == github.repository_owner &&
+      contains(github.event.issue.labels.*.name, 'post')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 이슈를 글로 변환
+        id: convert
+        env:
+          ISSUE_JSON: ${{ toJSON(github.event.issue) }}
+          ACTION: ${{ github.event.action }}
+        run: node tools/issue-to-post.js
+
+      - name: 커밋
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "변경 사항이 없습니다."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "${{ steps.convert.outputs.message }}"
+          git push
+
+      - name: 이슈에 결과 남기기
+        if: steps.convert.outputs.comment != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: process.env.BODY
+            })
+        env:
+          BODY: ${{ steps.convert.outputs.comment }}
