@@ -59,7 +59,7 @@ script: /assets/js/admin.js
         <button type="button" data-tab="live" role="tab">검색어 · 채팅</button>
         <button type="button" data-tab="data" role="tab">메뉴 · 공지</button>
       </nav>
-      <a class="btn ad-primary ad-newbtn" href="{{ "/write/" | url }}">새 글 쓰기</a>
+      <a class="btn ad-primary ad-newbtn" id="adNewPost" href="{{ "/write/" | url }}">새 글 쓰기</a>
       <button type="button" class="ad-logout" id="adLogout">로그아웃</button>
     </header>
 
@@ -230,4 +230,4 @@ script: /assets/js/admin.js
 
 <datalist id="adCats"></datalist>
 <datalist id="adTagOptions"></datalist>
-<script src="{{ "/assets/js/gaon-md.js" | url }}" defer></script>
+<script src="{{ "/assets/js/gaon-md.js" | asset }}" defer></script>

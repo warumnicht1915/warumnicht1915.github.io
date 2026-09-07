@@ -8,12 +8,20 @@ script: /assets/js/write.js
 
 <div class="wr" id="wr">
 
-  <!-- 토큰이 없을 때 -->
+  <!-- 토큰이 없거나 만료됐을 때: 여기서 바로 연결한다 -->
   <section class="wr-gate" id="wrGate">
     <div class="wr-gate-box">
       <h2>{% include "icon.html" name="github" %} 먼저 연결해 주세요</h2>
-      <p>글을 쓰려면 관리자 토큰이 필요합니다. 관리자 페이지에서 한 번만 연결하면 됩니다.</p>
-      <a class="btn ad-primary" href="{{ "/admin/" | url }}">관리자 페이지로 가기</a>
+      <p id="wrGateMsg">글을 쓰려면 이 저장소에만 권한을 준 <b>Fine-grained 토큰</b>이 필요합니다.
+        토큰은 이 브라우저에만 저장되고 GitHub API 호출에만 쓰입니다.</p>
+      <form id="wrLoginForm" autocomplete="off">
+        <input type="password" id="wrToken" placeholder="github_pat_..." aria-label="GitHub 토큰"
+               autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn ad-primary">연결하기</button>
+      </form>
+      <p class="wr-gate-sub">
+        토큰 만드는 법은 <a href="{{ "/admin/" | url }}">관리자 페이지</a>에 정리돼 있습니다.
+      </p>
     </div>
   </section>
 
@@ -21,9 +29,12 @@ script: /assets/js/write.js
   <div class="wr-app" id="wrApp" hidden>
 
     <header class="wr-top">
-      <a class="wr-back" href="{{ "/" | url }}" title="블로그로 돌아가기">
+      <a class="wr-back" id="wBack" href="{{ "/" | url }}" title="블로그로 돌아가기">
         {% include "icon.html" name="home" %}
       </a>
+      <button type="button" class="wr-back wr-close" id="wClose" title="편집기 닫기" hidden>
+        {% include "icon.html" name="x" %}
+      </button>
       <div class="wr-title-wrap">
         <input type="text" id="wTitle" class="wr-title" placeholder="제목을 입력하세요" aria-label="글 제목">
         <input type="text" id="wSubtitle" class="wr-subtitle" placeholder="부제 (선택)" aria-label="부제">
@@ -133,4 +144,4 @@ script: /assets/js/write.js
 
 <datalist id="wCats"></datalist>
 <datalist id="wTagOptions"></datalist>
-<script src="{{ "/assets/js/gaon-md.js" | url }}" defer></script>
+<script src="{{ "/assets/js/gaon-md.js" | asset }}" defer></script>

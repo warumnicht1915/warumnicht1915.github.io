@@ -93,6 +93,19 @@
   }
 
   /** 항상 살아 있는 토큰을 돌려준다. 없으면 만들고, 곧 만료면 갱신한다. */
+  /** 공유 DB 에 붙지 못하면 조용히 이 브라우저 저장으로 내려앉는다.
+      (사이트가 통째로 멈추는 것보다 낫다. 화면에는 로컬 모드라고 표시된다) */
+  function degrade(why) {
+    if (!REMOTE) return;
+    REMOTE = false;
+    Store.mode = 'local';
+    Store.remote = false;
+    emit('mode', 'local');
+    if (global.console && console.warn) {
+      console.warn('[gaon] 공유 저장소에 연결하지 못했습니다. 이 브라우저에만 기록합니다:', why || '');
+    }
+  }
+
   function token() {
     if (!REMOTE) return Promise.resolve('');
     if (auth.token && Date.now() < auth.expires) return Promise.resolve(auth.token);
@@ -105,6 +118,10 @@
         auth.admin = v === true;
         return t;
       }).catch(function () { return t; });
+    }).catch(function (e) {
+      // 여기서 붙잡지 않으면 페이지마다 처리되지 않은 오류가 쏟아진다
+      degrade(e && e.message);
+      return '';
     });
     return auth.ready;
   }
@@ -115,14 +132,14 @@
     return DB + path + '.json?auth=' + encodeURIComponent(t) + (extra ? '&' + extra : '');
   }
 
-  function rawGet(path, t) {
-    return fetch(url(path, t), { cache: 'no-store' })
+  function rawGet(path, t, extra) {
+    return fetch(url(path, t, extra), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; });
   }
 
-  function rget(path) {
-    return token().then(function (t) { return rawGet(path, t); });
+  function rget(path, extra) {
+    return token().then(function (t) { return rawGet(path, t, extra); });
   }
   function rsend(method, path, value) {
     return token().then(function (t) {
@@ -176,17 +193,25 @@
   function subscribe(path, query, onData) {
     var es = null, poll = null, stopped = false, timer = null;
     var errors = 0;
+    var got = false;          // 실시간 이벤트가 한 번이라도 왔는가
+
+    // SSE 는 연결까지 몇 초 걸릴 수 있다. 첫 화면은 일반 GET 으로 바로 그린다.
+    rget(path, query).then(function (all) {
+      if (stopped || got) return;
+      onData({ path: '/', data: all });
+    });
 
     function fallbackToPolling() {
       if (stopped || poll) return;
       if (es) { es.close(); es = null; }
       var last = '';
       var tick = function () {
-        rget(path).then(function (all) {
+        rget(path, query).then(function (all) {
           if (stopped) return;
           var json = JSON.stringify(all);
           if (json === last) return;
           last = json;
+          got = true;
           onData({ path: '/', data: all });
         });
       };
@@ -200,8 +225,8 @@
         if (stopped) return;
         try {
           es = new EventSource(url(path, t, query));
-          es.addEventListener('put', function (e) { errors = 0; onData(JSON.parse(e.data)); });
-          es.addEventListener('patch', function (e) { errors = 0; onData(JSON.parse(e.data)); });
+          es.addEventListener('put', function (e) { errors = 0; got = true; onData(JSON.parse(e.data)); });
+          es.addEventListener('patch', function (e) { errors = 0; got = true; onData(JSON.parse(e.data)); });
           es.onerror = function () {
             // 완전히 닫혔으면 (readyState 2) 재연결이 없으므로 바로 폴링으로 바꾼다.
             // 재연결 중(0)이면 몇 번은 기다려 본다.
@@ -678,7 +703,7 @@
   }
 
   // 원격 모드면 페이지가 열리자마자 로그인을 시작해 둔다
-  if (REMOTE) token().catch(function () {});
+  if (REMOTE) token();
 
   global.GaonStore = Store;
 })(window);

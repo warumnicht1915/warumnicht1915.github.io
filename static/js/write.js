@@ -19,7 +19,43 @@
   var gate = $('#wrGate'), app = $('#wrApp');
   if (!gate || !app) return;
 
-  if (!GH || !GH.getToken() || !GH.repo) return;   // 토큰 없으면 안내 화면 그대로
+  var Q = new URLSearchParams(location.search);
+  var EMBED = Q.get('embed') !== null && window.parent !== window;
+
+  /** 모달로 띄웠을 때만 부모 창에 알린다 */
+  function toParent(msg) {
+    if (EMBED) { try { window.parent.postMessage(msg, location.origin); } catch (e) {} }
+  }
+
+  if (EMBED) {
+    document.documentElement.classList.add('is-embed');
+    var closeBtn = $('#wClose'), backBtn = $('#wBack');
+    if (closeBtn && backBtn) {
+      backBtn.hidden = true;
+      closeBtn.hidden = false;
+      closeBtn.addEventListener('click', function () { toParent({ gaon: 'close' }); });
+    }
+  }
+
+  /* 토큰이 없거나 만료됐으면 이 화면에서 바로 연결한다 (관리자 페이지를 거치지 않는다) */
+  var loginForm = $('#wrLoginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var t = $('#wrToken').value.trim();
+      if (!t || !GH) return;
+      $('#wrGateMsg').textContent = '확인 중…';
+      GH.setToken(t);
+      GH.me().then(function () { location.reload(); })
+        .catch(function (err) {
+          GH.clearToken();
+          $('#wrGateMsg').textContent = err.message + ' 다시 시도해 주세요.';
+        });
+    });
+  }
+
+  if (!GH || !GH.repo) return;
+  if (!GH.getToken()) return;                      // 토큰 없으면 연결 화면 그대로
 
   var text = $('#wText');
   var previewEl = $('#wPreview');
@@ -66,6 +102,13 @@
     if (found) loadPost(found);
     else newPost();
   }).catch(function (e) {
+    // 토큰이 만료·무효면 편집기를 열지 말고 연결 화면으로 되돌린다
+    if (e && (e.status === 401 || e.status === 403)) {
+      GH.clearToken();
+      gate.hidden = false; app.hidden = true;
+      $('#wrGateMsg').textContent = e.message + ' 새 토큰으로 다시 연결해 주세요.';
+      return;
+    }
     gate.hidden = true; app.hidden = false;
     fail(e);
     newPost();
@@ -218,6 +261,7 @@
   /* ── 임시저장 ─────────────────────────────────────── */
   var draftTimer = null;
   function markDirty() {
+    if (!dirty) toParent({ gaon: 'dirty', value: true });
     dirty = true;
     clearTimeout(draftTimer);
     draftTimer = setTimeout(saveDraft, 1500);
@@ -232,6 +276,7 @@
       }));
       showSaved('임시저장됨');
       dirty = false;
+      toParent({ gaon: 'dirty', value: false });
     } catch (e) {}
   }
   function showSaved(label) {
@@ -244,7 +289,7 @@
   $('#wDraft').addEventListener('click', function () { saveDraft(); say('이 브라우저에 임시저장했습니다.', 'ok'); });
 
   window.addEventListener('beforeunload', function (e) {
-    if (!dirty) return;
+    if (!dirty || EMBED) return;
     e.preventDefault();
     e.returnValue = '';
   });
@@ -448,9 +493,15 @@
       .then(function () {
         dirty = false;
         try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-        say('발행했습니다. 1~2분 뒤 블로그에 나타납니다. 잠시 후 이동합니다…', 'ok');
         $('#wPublish').disabled = false;
-        setTimeout(function () { location.href = base + '/admin/'; }, 2200);
+        if (EMBED) {
+          say('발행했습니다. 1~2분 뒤 블로그에 나타납니다.', 'ok');
+          toParent({ gaon: 'dirty', value: false });
+          setTimeout(function () { toParent({ gaon: 'published', title: title, path: path }); }, 1200);
+          return;
+        }
+        say('발행했습니다. 1~2분 뒤 블로그에 나타납니다. 잠시 후 이동합니다…', 'ok');
+        setTimeout(function () { location.href = base + '/'; }, 2200);
       })
       .catch(function (e) { $('#wPublish').disabled = false; fail(e); });
   }

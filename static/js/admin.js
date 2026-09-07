@@ -180,12 +180,26 @@
     $('#adCats').innerHTML = Object.keys(set).map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
   }
 
-  /* 글 편집은 전용 페이지(/write/)로 옮겼다. 여기서는 이동만 시킨다. */
+  /* 글 편집기는 이 화면 위에 큰 창으로 띄운다 (editor-modal.js).
+     스크립트가 없으면 예전처럼 /write/ 로 이동한다. */
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
   function openEditor(post) {
+    if (window.GaonEditor) {
+      window.GaonEditor.open(post ? post.path : null, function () {
+        say('발행했습니다. 1~2분 뒤 사이트에 반영됩니다.', 'ok');
+        loadPosts();
+      });
+      return;
+    }
     location.href = (CFG.baseurl || '') + '/write/' +
       (post ? '?edit=' + encodeURIComponent(post.path) : '');
   }
+  var newBtn = $('#adNewPost');
+  if (newBtn) newBtn.addEventListener('click', function (e) {
+    if (!window.GaonEditor) return;      // 스크립트가 없으면 링크 그대로 따라간다
+    e.preventDefault();
+    openEditor(null);
+  });
 
   /* ── 이미지 업로드 공용 ────────────────────────────── */
   var EXT = {

@@ -58,11 +58,18 @@
   }
 
   /* ── 공통 동작 ─────────────────────────────────────── */
+  /* 편집기는 페이지를 옮기지 않고 이 화면 위에 큰 창으로 띄운다.
+     (editor-modal.js 가 없으면 예전처럼 /write/ 로 이동한다) */
   function goEdit(srcPath) {
-    location.href = base + '/admin/?edit=' + encodeURIComponent(srcPath);
+    if (window.GaonEditor) return window.GaonEditor.open(srcPath, afterPublish);
+    location.href = base + '/write/?edit=' + encodeURIComponent(srcPath);
   }
   function goNew() {
-    location.href = base + '/admin/?new=1';
+    if (window.GaonEditor) return window.GaonEditor.open(null, afterPublish);
+    location.href = base + '/write/';
+  }
+  function afterPublish() {
+    say('발행했습니다. 1~2분 뒤 사이트에 반영됩니다.', 'ok');
   }
 
   function removePost(srcPath, title, afterUrl) {

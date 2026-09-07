@@ -6,9 +6,9 @@
 <body class="bare">
 {{ content }}
 
-<script src="{{ "/assets/js/config.js" | url }}"></script>
-<script src="{{ "/assets/js/gh.js" | url }}" defer></script>
-{% if page.script %}<script src="{{ page.script | url }}" defer></script>{% end %}
+<script src="{{ "/assets/js/config.js" | asset }}"></script>
+<script src="{{ "/assets/js/gh.js" | asset }}" defer></script>
+{% if page.script %}<script src="{{ page.script | asset }}" defer></script>{% end %}
 <script>
   /* 이 페이지는 헤더·사이드바 없이 편집기만 쓴다. 테마 전환만 붙인다. */
   document.addEventListener('keydown', function (e) {

@@ -1,25 +1,42 @@
 <section class="comments" id="comments" data-page="{{ page.url }}">
-  <h2 class="sec-t">{% include "icon.html" name="chat" %} 댓글 <small id="cmtCount">0</small></h2>
+  <div class="cmt-top">
+    <h2 class="sec-t">{% include "icon.html" name="chat" %} 댓글 <small id="cmtCount">0</small></h2>
+    <span class="cmt-mode" id="cmtMode" hidden></span>
+  </div>
 
   <form class="cmt-form" id="cmtForm" autocomplete="off">
-    <div class="cmt-form-top">
-      <input type="text" id="cmtName" maxlength="16" placeholder="이름" aria-label="이름">
-      <span class="cmt-reply-to" id="cmtReplyTo" hidden>
-        <b></b> 님에게 답글 <button type="button" id="cmtReplyCancel" aria-label="답글 취소">×</button>
-      </span>
-    </div>
-    <textarea id="cmtText" rows="3" maxlength="1500"
-      placeholder="댓글을 남겨주세요. 로그인 없이 바로 쓸 수 있습니다." aria-label="댓글 내용"></textarea>
-    <div class="cmt-form-bot">
-      <span class="cmt-hint" id="cmtHint">줄바꿈은 그대로 보입니다 · 최대 1500자</span>
-      <button type="submit" class="btn ad-primary" id="cmtSend">등록</button>
+    <span class="cmt-av" id="cmtMyAv" aria-hidden="true">익</span>
+    <div class="cmt-form-box">
+      <div class="cmt-form-top">
+        <input type="text" id="cmtName" maxlength="16" placeholder="이름 (선택)" aria-label="이름">
+        <span class="cmt-reply-to" id="cmtReplyTo" hidden>
+          <b></b> 님에게 답글 <button type="button" id="cmtReplyCancel" aria-label="답글 취소">×</button>
+        </span>
+      </div>
+      <textarea id="cmtText" rows="3" maxlength="1500"
+        placeholder="댓글을 남겨주세요. 로그인 없이 바로 쓸 수 있습니다." aria-label="댓글 내용"></textarea>
+      <div class="cmt-form-bot">
+        <span class="cmt-hint" id="cmtHint">줄바꿈은 그대로 보입니다 · Ctrl+Enter 로 등록</span>
+        <button type="submit" class="btn ad-primary" id="cmtSend">등록</button>
+      </div>
     </div>
   </form>
 
-  <div class="cmt-loading" id="cmtLoading">
-    <svg class="mascot" viewBox="0 0 120 100"><use href="#gaon-mascot"></use></svg>
-    <p>댓글을 불러오는 중…</p>
-    <span class="dots"><i></i><i></i><i></i></span>
+  <div class="cmt-skel" id="cmtLoading" aria-label="댓글을 불러오는 중">
+    <div class="cmt-skel-row">
+      <span class="cmt-skel-av"></span>
+      <div class="cmt-skel-box">
+        <span class="cmt-skel-line" style="width:32%"></span>
+        <span class="cmt-skel-line" style="width:86%"></span>
+      </div>
+    </div>
+    <div class="cmt-skel-row">
+      <span class="cmt-skel-av"></span>
+      <div class="cmt-skel-box">
+        <span class="cmt-skel-line" style="width:24%"></span>
+        <span class="cmt-skel-line" style="width:64%"></span>
+      </div>
+    </div>
   </div>
 
   <ul class="cmt-list" id="cmtList" hidden></ul>

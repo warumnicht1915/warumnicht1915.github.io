@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const site = require('./engine/site');
 const { Renderer } = require('./engine/renderer');
 const u = require('./engine/util');
@@ -102,8 +103,19 @@ function build() {
     return EXTERNAL.test(s2) ? s2 : (cfg.url || '').replace(/\/$/, '') + s2;
   };
 
+  /* 에셋 버전표: 파일 내용이 바뀌면 주소가 바뀌어 브라우저 캐시가 자동으로 갈린다.
+     이게 없으면 배포해도 옛 style.css / js 가 그대로 쓰여 화면이 깨져 보인다. */
+  const VER = Object.create(null);
+  const asset = (p) => {
+    const s2 = String(p == null ? '' : p);
+    if (EXTERNAL.test(s2)) return s2;
+    const v = VER[s2.replace(/^\/+/, '/')];
+    return url(s2) + (v ? '?v=' + v : '');
+  };
+
   const renderer = new Renderer(path.join(ROOT, 'templates'), {
     url: (v) => url(String(v || '/')),
+    asset: (v) => asset(String(v || '/')),
     abs: (v) => absolute(String(v || '/')),
     catUrl: (slug) => url('/category/' + slug + '/'),
     tagUrl: (slug) => url('/tag/' + slug + '/'),
@@ -157,6 +169,25 @@ function build() {
       comments: cfg.comments,
     },
   };
+
+  /* 에셋 해시 채우기 — 템플릿을 그리기 전에 끝나야 한다 */
+  const MD_BUNDLE = browserBundle(ROOT);
+  const CONFIG_JS =
+    '/* 빌드 시 자동 생성됩니다. 직접 수정하지 마세요. */\n' +
+    'window.GAON_CONFIG = ' + JSON.stringify(globals.clientConfig, null, 2) + ';\n';
+
+  const hash8 = (buf) => crypto.createHash('md5').update(buf).digest('hex').slice(0, 8);
+  (function scan(dir, prefix) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) scan(full, prefix + '/' + e.name);
+      else if (/\.(css|js)$/.test(e.name)) VER[prefix + '/' + e.name] = hash8(fs.readFileSync(full));
+    }
+  })(path.join(ROOT, 'static'), '/assets');
+  VER['/assets/js/gaon-md.js'] = hash8(MD_BUNDLE);
+  VER['/assets/js/config.js'] = hash8(CONFIG_JS);
 
   const written = [];
   const emit = (outPath, html) => {
@@ -292,10 +323,8 @@ function build() {
 
   /* 8) 정적 자원 복사 + 클라이언트 설정 주입 */
   const copied = u.copyDir(path.join(ROOT, 'static'), path.join(OUT, 'assets'));
-  u.writeFile(path.join(OUT, 'assets', 'js', 'gaon-md.js'), browserBundle(ROOT));
-  u.writeFile(path.join(OUT, 'assets', 'js', 'config.js'),
-    '/* 빌드 시 자동 생성됩니다. 직접 수정하지 마세요. */\n' +
-    'window.GAON_CONFIG = ' + JSON.stringify(globals.clientConfig, null, 2) + ';\n');
+  u.writeFile(path.join(OUT, 'assets', 'js', 'gaon-md.js'), MD_BUNDLE);
+  u.writeFile(path.join(OUT, 'assets', 'js', 'config.js'), CONFIG_JS);
 
   const ms = Date.now() - started;
   console.log(
