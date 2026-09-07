@@ -148,7 +148,7 @@ function build() {
     // 클라이언트 스크립트에 넘길 설정 (JSON 으로 주입)
     clientConfig: {
       baseurl: base,
-      repo: (cfg.comments && cfg.comments.giscus && cfg.comments.giscus.repo) || '',
+      repo: (cfg.comments && cfg.comments.repo) || '',
       firebase: cfg.realtime.firebase,
       room: cfg.realtime.room,
       chat: cfg.realtime.chat || {},

@@ -1,11 +1,26 @@
-<section class="comments" id="comments">
-  <h2 class="sec-t">{% include "icon.html" name="chat" %} 댓글</h2>
-  <div id="giscusMount" class="giscus-mount"></div>
-  <div class="notice-box" id="commentsFallback" hidden>
-    <b>댓글을 켜려면 한 단계만 더!</b>
-    <p><a href="https://giscus.app" target="_blank" rel="noopener">giscus.app</a> 에서 이 저장소의
-      <code>repoId</code> 와 <code>categoryId</code> 를 발급받아
-      <code>site.config.json</code> 의 <code>comments.giscus</code> 에 넣고 푸시하면 바로 활성화됩니다.
-      자세한 순서는 저장소의 <code>SETUP.md</code> 를 보세요.</p>
+<section class="comments" id="comments" data-page="{{ page.url }}">
+  <h2 class="sec-t">{% include "icon.html" name="chat" %} 댓글 <small id="cmtCount">0</small></h2>
+
+  <form class="cmt-form" id="cmtForm" autocomplete="off">
+    <div class="cmt-form-top">
+      <input type="text" id="cmtName" maxlength="16" placeholder="이름" aria-label="이름">
+      <span class="cmt-reply-to" id="cmtReplyTo" hidden>
+        <b></b> 님에게 답글 <button type="button" id="cmtReplyCancel" aria-label="답글 취소">×</button>
+      </span>
+    </div>
+    <textarea id="cmtText" rows="3" maxlength="1500"
+      placeholder="댓글을 남겨주세요. 로그인 없이 바로 쓸 수 있습니다." aria-label="댓글 내용"></textarea>
+    <div class="cmt-form-bot">
+      <span class="cmt-hint" id="cmtHint">줄바꿈은 그대로 보입니다 · 최대 1500자</span>
+      <button type="submit" class="btn ad-primary" id="cmtSend">등록</button>
+    </div>
+  </form>
+
+  <div class="cmt-loading" id="cmtLoading">
+    <svg class="mascot" viewBox="0 0 120 100"><use href="#gaon-mascot"></use></svg>
+    <p>댓글을 불러오는 중…</p>
+    <span class="dots"><i></i><i></i><i></i></span>
   </div>
+
+  <ul class="cmt-list" id="cmtList" hidden></ul>
 </section>

@@ -4,6 +4,7 @@
 {% include "head.html" %}
 </head>
 <body>
+{% include "chat-mascot.html" %}
 {% include "header.html" %}
 
 <main id="main" class="wrap layout{% if page.wide %} wide{% end %}">
@@ -22,6 +23,7 @@
 <script src="{{ "/assets/js/store.js" | url }}" defer></script>
 <script src="{{ "/assets/js/widgets.js" | url }}" defer></script>
 <script src="{{ "/assets/js/chat.js" | url }}" defer></script>
+<script src="{{ "/assets/js/comments.js" | url }}" defer></script>
 <script src="{{ "/assets/js/owner.js" | url }}" defer></script>
 {% if page.kind == "post" %}<script src="{{ "/assets/js/post.js" | url }}" defer></script>{% end %}
 {% if page.script %}<script src="{{ page.script | url }}" defer></script>{% end %}

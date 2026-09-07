@@ -17,17 +17,8 @@
     "email": "warumnicht1915@gmail.com"
   },
   "comments": {
-    "provider": "giscus",
-    "giscus": {
-      "repo": "warumnicht1915/warumnicht1915.github.io",
-      "repoId": "R_kgDOUQm2Ng",
-      "category": "Comments",
-      "categoryId": "DIC_kwDOUQm2Ns4DFCMN",
-      "mapping": "pathname",
-      "reactionsEnabled": "1",
-      "inputPosition": "top",
-      "lang": "ko"
-    }
+    "provider": "gaon",
+    "repo": "warumnicht1915/warumnicht1915.github.io"
   },
   "realtime": {
     "provider": "firebase",

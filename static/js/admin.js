@@ -504,6 +504,27 @@
   renderTrends();
   paintUsage();
 
+  /* 내 사용자 ID (관리자 등록용) */
+  var uidEl = $('#adUid');
+  if (uidEl && Store) {
+    Store.whoami().then(function (who) {
+      if (who.local) {
+        uidEl.textContent = '공유 DB 미설정 (로컬 모드)';
+        return;
+      }
+      uidEl.textContent = who.uid || '(받지 못함)';
+      if (who.admin) uidEl.textContent += '  ← 관리자로 등록됨';
+    });
+  }
+  var uidCopy = $('#adUidCopy');
+  if (uidCopy) {
+    uidCopy.addEventListener('click', function () {
+      var v = (uidEl.textContent || '').split('  ')[0];
+      if (navigator.clipboard) navigator.clipboard.writeText(v);
+      say('복사했습니다: ' + v, 'ok');
+    });
+  }
+
   /** 블로그 화면의 "새 글 / 수정" 버튼에서 넘어온 요청을 처리한다. */
   function applyQuery() {
     var q = new URLSearchParams(location.search);
@@ -518,7 +539,7 @@
   /* ── 시작 ──────────────────────────────────────────── */
   if (!REPO) {
     $('#adLoginMsg').textContent =
-      'site.config.json 의 comments.giscus.repo 에 "소유자/저장소" 를 먼저 채워주세요.';
+      'site.config.json 의 comments.repo 에 "소유자/저장소" 를 먼저 채워주세요.';
     return;
   }
   var saved = GH.getToken();

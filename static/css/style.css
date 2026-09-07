@@ -1347,3 +1347,82 @@ body.bare { background: var(--bg); }
 @media (max-width: 720px) {
   .wr-meta .ad-avatar-ctl { flex-wrap: wrap; }
 }
+
+/* ============================================================
+   24. 자체 댓글
+   ============================================================ */
+.cmt-form {
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 15px 16px; margin-bottom: 22px;
+}
+.cmt-form-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+#cmtName {
+  width: 160px; height: 36px; padding: 0 12px; font-size: 13.5px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 9px; outline: none;
+}
+#cmtName:focus, #cmtText:focus { border-color: var(--accent); }
+.cmt-reply-to {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--accent);
+  background: var(--accent-bg); padding: 5px 6px 5px 11px; border-radius: 999px;
+}
+.cmt-reply-to button { width: 18px; height: 18px; border-radius: 50%; color: var(--accent); font-size: 14px; }
+.cmt-reply-to button:hover { background: var(--accent); color: #fff; }
+#cmtText {
+  width: 100%; padding: 11px 13px; font: 400 14px/1.7 var(--sans); resize: vertical;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; outline: none;
+  color: var(--text);
+}
+.cmt-form-bot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.cmt-hint { font-size: 11.5px; color: var(--muted); }
+.cmt-hint.bad { color: var(--danger); font-weight: 600; }
+#cmtSend { padding: 8px 22px; font-size: 13.5px; }
+
+.cmt-loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px 0; color: var(--muted); }
+.cmt-loading .mascot { width: 88px; height: 74px; color: var(--accent); }
+.cmt-loading p { font-size: 12.5px; }
+
+.cmt-list { display: flex; flex-direction: column; }
+.cmt {
+  display: flex; gap: 12px; padding: 15px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.cmt:last-child { border-bottom: 0; }
+.cmt.reply {
+  padding-left: 30px; border-bottom: 1px dashed var(--line);
+  background: linear-gradient(90deg, var(--surface-2) 0 3px, transparent 3px);
+}
+.cmt-av {
+  width: 34px; height: 34px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; font-size: 14px; font-weight: 800;
+  background: var(--accent-bg); color: var(--accent);
+}
+.cmt.reply .cmt-av { width: 28px; height: 28px; font-size: 12.5px; }
+.cmt-main { flex: 1; min-width: 0; }
+.cmt-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+.cmt-head b { font-size: 13.5px; }
+.cmt-head time { font-size: 11.5px; color: var(--muted); }
+.cmt-badge { font-style: normal; font-size: 10px; font-weight: 700; color: var(--accent);
+  background: var(--accent-bg); padding: 1px 6px; border-radius: 999px; }
+.cmt-acts { margin-left: auto; display: flex; gap: 8px; opacity: 0; transition: opacity .15s; }
+.cmt:hover .cmt-acts, .cmt:focus-within .cmt-acts { opacity: 1; }
+.cmt-acts button { font-size: 11.5px; color: var(--muted); }
+.cmt-acts button:hover { color: var(--accent); text-decoration: underline; }
+.cmt-acts button.danger:hover { color: var(--danger); }
+.cmt-body { font-size: 14px; line-height: 1.75; color: var(--text-2); word-break: break-word; }
+.cmt-body.deleted { color: var(--muted); font-style: italic; font-size: 13px; }
+.cmt-empty { text-align: center; color: var(--muted); font-size: 13.5px; padding: 34px 0; }
+@media (hover: none) { .cmt-acts { opacity: 1; } }
+
+/* 관리자: 내 사용자 ID */
+.ad-uidbox {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 13px 15px;
+}
+.ad-uidbox b { font-size: 12.5px; }
+.ad-uidbox code {
+  font: 400 12px/1 var(--mono); background: var(--surface); color: var(--accent);
+  border: 1px solid var(--line); padding: 6px 10px; border-radius: 7px;
+}
+.ad-uidbox .btn-line { width: auto; padding: 6px 12px; font-size: 12px; }
+.ad-uidbox .ad-hint { flex-basis: 100%; margin: 0; }

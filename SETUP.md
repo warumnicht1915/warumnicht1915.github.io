@@ -19,55 +19,26 @@
 
 ---
 
-## 2. 댓글 · 방명록 켜기 (giscus, 3분)
+## 2. 댓글 · 채팅 · 통계 켜기 (공유 DB, 10분)
 
-댓글은 GitHub Discussions 에 저장됩니다. 스팸 관리와 백업을 GitHub 가 대신해 줍니다.
+댓글·채팅·조회수·방문자·인기 검색어는 **전부 자체 구현**이고, 저장할 곳만 있으면 됩니다.
+Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스는 쓰지 않습니다.)
 
-1. 저장소 → **Settings** → **General** → 아래로 내려 **Features** →
-   **Discussions** 체크
-2. 저장소 → **Discussions** 탭 → 카테고리 편집에서 **`Comments`** 라는 카테고리를 만듭니다
-   (형식은 `Announcement` 가 아닌 **Open-ended discussion** 으로)
-3. https://github.com/apps/giscus 에서 **giscus** 앱을 이 저장소에 설치합니다
-4. https://giscus.app 에 들어가
-   - 저장소에 `warumnicht1915/warumnicht1915.github.io` 입력
-   - Discussion 카테고리로 `Comments` 선택
-   - 페이지 아래쪽 "giscus 활성화" 코드에서 **`data-repo-id`** 와 **`data-category-id`** 값을 복사
-5. `site.config.json` 을 열어 붙여 넣습니다
+### 2-1. 데이터베이스와 익명 로그인 만들기
 
-```json
-"comments": {
-  "provider": "giscus",
-  "giscus": {
-    "repo": "warumnicht1915/warumnicht1915.github.io",
-    "repoId": "R_kgDO...",          ← 여기
-    "category": "Comments",
-    "categoryId": "DIC_kwDO...",    ← 여기
-    "mapping": "pathname",
-    "lang": "ko"
-  }
-}
-```
-
-6. 커밋 · 푸시하면 모든 글 아래와 방명록에 댓글창이 나타납니다.
-
-값이 비어 있으면 댓글 자리에 설정 안내 상자가 대신 나옵니다.
-
----
-
-## 3. 실시간 채팅 · 접속자 · 조회수 · 인기 검색어 켜기 (5분)
-
-이 네 가지는 **모든 방문자가 같은 값을 봐야** 하므로 저장소가 필요합니다.
-무료 등급의 Firebase Realtime Database 를 씁니다.
-
-### 3-1. 데이터베이스 만들기
-
-1. https://console.firebase.google.com 에서 프로젝트를 만듭니다
+1. https://console.firebase.google.com 에서 프로젝트를 만듭니다 (Analytics 는 꺼도 됩니다)
 2. 왼쪽 **빌드 → Realtime Database → 데이터베이스 만들기**
-3. 위치는 아무거나, 보안 규칙은 일단 **잠금 모드**로 시작합니다
-4. 만들어진 데이터베이스 주소를 복사합니다
-   (`https://프로젝트이름-default-rtdb.firebaseio.com` 형태)
+   위치는 아무거나, 보안 규칙은 **잠금 모드**로 시작합니다
+3. 왼쪽 **빌드 → Authentication → 시작하기 → 익명(Anonymous) 사용 설정**
+   → 로그인 없이 댓글을 쓰더라도 서버는 "누가 썼는지"를 알게 됩니다. 보안의 핵심입니다.
+4. 프로젝트 설정(톱니바퀴) → **내 앱 → 웹 앱 추가** → 나오는 값에서 두 개를 복사합니다
+   - `databaseURL` (`https://...-default-rtdb.firebaseio.com`)
+   - `apiKey` (`AIza...`)
 
-### 3-2. 보안 규칙 설정 (중요)
+> [!NOTE]
+> `apiKey` 는 비밀번호가 아닙니다. 공개되어도 괜찮은 값이고, 실제 접근 통제는 아래 규칙이 합니다.
+
+### 2-2. 보안 규칙 (가장 중요)
 
 **규칙** 탭에 아래를 그대로 붙여 넣고 게시합니다.
 전체를 열어두면 누구나 데이터를 지울 수 있으니, 반드시 경로별로 제한하세요.
@@ -78,48 +49,104 @@
     ".read": false,
     ".write": false,
 
-    "views":  { ".read": true, ".write": true, "$post": { ".validate": "newData.isNumber()" } },
+    "admins": {
+      "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false }
+    },
 
-    "trends": {
+    "views": {
       ".read": true,
-      "$kw": {
-        ".write": true,
-        "n":  { ".validate": "newData.isNumber()" },
-        "kw": { ".validate": "newData.isString() && newData.val().length <= 24" }
+      "$post": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
       }
     },
 
     "visits": {
       ".read": true,
-      "days":  { "$day": { "uv": { ".write": true, ".validate": "newData.isNumber()" },
-                           "pv": { ".write": true, ".validate": "newData.isNumber()" } } },
-      "total": { "uv": { ".write": true, ".validate": "newData.isNumber()" },
-                 "pv": { ".write": true, ".validate": "newData.isNumber()" } }
+      "days": {
+        "$day": {
+          "$kind": {
+            ".write": "auth != null",
+            ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+          }
+        }
+      },
+      "total": {
+        "$kind": {
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+        }
+      }
+    },
+
+    "trends": {
+      ".read": true,
+      "$kw": {
+        ".write": "auth != null || root.child('admins').child(auth.uid).val() === true",
+        "kw": { ".validate": "newData.isString() && newData.val().length <= 24" },
+        "n":  { ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)" },
+        "$other": { ".validate": false }
+      }
     },
 
     "presence": {
       ".read": true,
-      "$room": { "$client": { ".write": true, ".validate": "newData.hasChild('at')" } }
+      "$room": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChild('at') && newData.child('at').isNumber()"
+        }
+      }
+    },
+
+    "comments": {
+      ".read": true,
+      "$page": {
+        "$id": {
+          ".write": "auth != null && (
+              !data.exists()
+              || data.child('uid').val() === auth.uid
+              || root.child('admins').child(auth.uid).val() === true
+            )",
+          ".validate": "newData.hasChildren(['n','t','at','uid']) || newData.hasChild('del')",
+          "n":   { ".validate": "newData.isString() && newData.val().length <= 16" },
+          "t":   { ".validate": "newData.isString() && newData.val().length <= 1500" },
+          "at":  { ".validate": "newData.isNumber()" },
+          "uid": { ".validate": "newData.val() === auth.uid || data.val() === newData.val()" },
+          "p":   { ".validate": "newData.isString() || newData.val() === null" },
+          "del": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
     },
 
     "rooms": {
       "$room": {
-        "usage": { ".read": true, ".write": true },
+        "usage": {
+          ".read": true,
+          ".write": "auth != null",
+          "$k": { ".validate": "newData.isNumber() || newData.hasChildren()" }
+        },
         "messages": {
           ".read": true,
           ".indexOn": ".key",
           "$msg": {
-            ".write": true,
-            ".validate": "newData.hasChildren(['n','at']) || newData.hasChild('del')",
+            ".write": "auth != null && (
+                !data.exists()
+                || data.child('uid').val() === auth.uid
+                || root.child('admins').child(auth.uid).val() === true
+              )",
+            ".validate": "newData.hasChildren(['n','at','uid']) || newData.hasChild('del')",
             "n":   { ".validate": "newData.isString() && newData.val().length <= 12"  },
             "t":   { ".validate": "newData.isString() && newData.val().length <= 300" },
             "at":  { ".validate": "newData.isNumber()" },
-            "by":  { ".validate": "newData.isString() && newData.val().length <= 40"  },
+            "uid": { ".validate": "newData.val() === auth.uid || data.val() === newData.val()" },
             "img": { ".validate": "newData.isString() && newData.val().length <= 220000" },
             "iw":  { ".validate": "newData.isNumber()" },
             "ih":  { ".validate": "newData.isNumber()" },
             "ib":  { ".validate": "newData.isNumber()" },
-            "del": { ".validate": "newData.isNumber()" }
+            "del": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
           }
         }
       }
@@ -128,18 +155,44 @@
 }
 ```
 
-이 규칙은 이렇게 동작합니다.
+이 규칙이 실제로 막아주는 것들입니다.
 
-- 닉네임 12자, 메시지 300자, 이미지 약 215KB 를 넘으면 서버가 거부합니다
-- 명시한 경로 밖은 읽기도 쓰기도 전부 막힙니다
-- 방문자 수는 `uv`(순 방문자) 와 `pv`(페이지 조회) 를 따로 셉니다
+| 공격 | 막는 방법 |
+|---|---|
+| 로그인 없이 아무거나 쓰기 | 모든 쓰기에 `auth != null`. 익명 로그인이라도 서버가 uid 를 발급합니다 |
+| **남의 댓글·메시지 수정/삭제** | `data.child('uid').val() === auth.uid` — 글쓴이 본인 또는 관리자만 |
+| 조회수·방문자 수 부풀리기 | 카운터는 **정확히 +1** 만 허용. `999999` 로 덮어쓰기가 거부됩니다 |
+| 초대형 데이터로 용량 채우기 | 이름 16자, 댓글 1500자, 메시지 300자, 이미지 215KB 로 서버가 자릅니다 |
+| 이상한 필드 끼워넣기 | `$other: { ".validate": false }` — 정의한 필드 외에는 저장 자체가 안 됩니다 |
+| 남의 접속 상태 위조 | `auth.uid === $uid` — 자기 자리만 씁니다 |
+| 관리자 권한 탈취 | `admins` 는 **쓰기 불가**. Firebase 콘솔에서만 등록됩니다 |
+| 전체 데이터 훔쳐보기 | 최상위 `.read: false`. 공개된 경로만 읽힙니다 |
 
-> [!NOTE]
-> 이 규칙은 로그인 없이 누구나 채팅을 쓸 수 있는 대신, 메시지 수정·삭제도 열려 있습니다.
-> 관리자 삭제 기능을 쓰려면 이 형태가 필요합니다. 장난이 심해지면 채팅 관리 화면에서
-> **대화 전부 지우기** 로 초기화하거나, `rooms` 아래 `.write` 를 잠그면 됩니다.
+여전히 남는 위험은 하나입니다. **익명 로그인은 누구나 새로 받을 수 있으므로,
+작정하고 uid 를 계속 새로 만들며 도배하는 것은 막지 못합니다.** 그때는 관리 화면에서
+**대화 전부 지우기 / 검색어 비우기** 로 정리하거나, Firebase 콘솔에서
+`rooms`·`comments` 의 `.write` 를 잠시 `false` 로 바꾸면 즉시 멎습니다.
 
-### 3-3. 설정에 넣기
+### 2-4. 나를 관리자로 등록하기
+
+관리자만 남의 댓글·채팅을 지울 수 있습니다. 한 번만 등록하면 됩니다.
+
+1. 설정을 저장하고 배포한 뒤 블로그의 `/admin/` → **프로필 · 설정** 으로 갑니다
+2. 아래쪽 **내 사용자 ID** 에 뜨는 값을 복사합니다 (`abc123...` 형태)
+3. Firebase 콘솔 → Realtime Database → 데이터 탭에서 이렇게 만듭니다
+
+```text
+admins
+  └─ 복사한_사용자_ID : true
+```
+
+4. 블로그를 새로고침하면 모든 댓글과 채팅에 **삭제** 가 보입니다
+
+> [!WARNING]
+> 이 ID 는 브라우저마다 다릅니다. 브라우저 저장소를 지우거나 다른 기기에서 관리하려면
+> 그 기기의 ID 도 같은 방법으로 추가하세요.
+
+### 2-3. 설정에 넣기
 
 `site.config.json` 의 `realtime.firebase.databaseURL` 에 주소를 넣습니다.
 

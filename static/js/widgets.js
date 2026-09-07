@@ -1,6 +1,6 @@
 /* ============================================================
    widgets.js — 사이드바 위젯 구동
-   인기 검색어 · 접속자 · 조회수 · 인기 글 · 댓글(giscus) 마운트
+   인기 검색어 · 접속자 · 조회수 · 인기 글
    ============================================================ */
 (function () {
   'use strict';
@@ -160,44 +160,4 @@
     });
   }
 
-  /* ── 4. 댓글(giscus) ──────────────────────────────── */
-  var mount = $('#giscusMount');
-  if (mount) {
-    var g = (CFG.comments && CFG.comments.giscus) || {};
-    var ready = CFG.comments && CFG.comments.provider === 'giscus' && g.repoId && g.categoryId;
-
-    if (!ready) {
-      var fb = $('#commentsFallback');
-      if (fb) fb.hidden = false;
-    } else {
-      var theme = function () {
-        return document.documentElement.dataset.theme === 'dark' ? 'dark_dimmed' : 'light';
-      };
-      var s = document.createElement('script');
-      s.src = 'https://giscus.app/client.js';
-      s.async = true;
-      s.crossOrigin = 'anonymous';
-      s.setAttribute('data-repo', g.repo);
-      s.setAttribute('data-repo-id', g.repoId);
-      s.setAttribute('data-category', g.category);
-      s.setAttribute('data-category-id', g.categoryId);
-      s.setAttribute('data-mapping', g.mapping || 'pathname');
-      s.setAttribute('data-strict', '0');
-      s.setAttribute('data-reactions-enabled', g.reactionsEnabled || '1');
-      s.setAttribute('data-emit-metadata', '0');
-      s.setAttribute('data-input-position', g.inputPosition || 'top');
-      s.setAttribute('data-theme', theme());
-      s.setAttribute('data-lang', g.lang || 'ko');
-      s.setAttribute('data-loading', 'lazy');
-      mount.appendChild(s);
-
-      // 다크모드를 켜고 끌 때 댓글창 테마도 따라가게 한다
-      document.addEventListener('gaon:theme', function () {
-        var frame = document.querySelector('iframe.giscus-frame');
-        if (!frame) return;
-        frame.contentWindow.postMessage(
-          { giscus: { setConfig: { theme: theme() } } }, 'https://giscus.app');
-      });
-    }
-  }
 })();

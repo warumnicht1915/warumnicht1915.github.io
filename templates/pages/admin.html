@@ -138,15 +138,25 @@ script: /assets/js/admin.js
           <p class="ad-hint">가로가 넓은 이미지(2000×800 정도)가 잘 어울립니다. 최대 4MB.</p>
         </div>
 
-        <h4 class="ad-sub wide">댓글 (giscus)</h4>
-        <label>repoId <input type="text" id="gRepoId" placeholder="R_kgDO..."></label>
-        <label>categoryId <input type="text" id="gCatId" placeholder="DIC_kwDO..."></label>
-
-        <h4 class="ad-sub wide">실시간 기능</h4>
+        <h4 class="ad-sub wide">공유 데이터베이스 (댓글 · 채팅 · 조회수 · 방문자 · 검색어)</h4>
         <label class="wide">Realtime Database 주소
           <input type="text" id="rDbUrl" placeholder="https://프로젝트-default-rtdb.firebaseio.com">
         </label>
-        <p class="ad-hint wide">비워두면 채팅·접속자·조회수가 이 브라우저 기준으로만 동작합니다.</p>
+        <label>Web API Key <input type="text" id="rApiKey" placeholder="AIza..."></label>
+        <label>Project ID <input type="text" id="rProjectId" placeholder="my-blog"></label>
+        <p class="ad-hint wide">
+          둘 다 채워야 공유 모드로 동작합니다. 비어 있으면 모든 기록이 이 브라우저에만 남습니다.
+          설정 방법은 <code>SETUP.md</code> 3번을 보세요.
+        </p>
+        <div class="ad-uidbox wide" id="adUidBox">
+          <b>내 사용자 ID</b>
+          <code id="adUid">확인 중…</code>
+          <button type="button" class="btn-line" id="adUidCopy">복사</button>
+          <p class="ad-hint">
+            Firebase 콘솔의 Realtime Database 에서 <code>admins</code> → 이 ID → <code>true</code> 로
+            넣어두면 모든 댓글·채팅을 지울 수 있는 관리자가 됩니다.
+          </p>
+        </div>
       </form>
     </div>
 
