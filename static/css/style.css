@@ -1048,3 +1048,70 @@ a.tag:hover { color: var(--accent); border-color: var(--accent); background: var
   .ow-write { height: 42px; padding: 0 15px 0 13px; font-size: 13px; }
   .ow-panel { height: 42px; padding: 0 13px; }
 }
+
+/* ── 20. 관리자: 프로필 이미지 · 태그 칩 · 태그 관리 ───── */
+.ad-avatar { display: flex; flex-direction: column; gap: 8px; }
+.ad-avatar-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.ad-avatar-row { display: flex; align-items: center; gap: 14px; }
+.ad-avatar-row img {
+  width: 64px; height: 64px; border-radius: 50%; flex: none; object-fit: cover;
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.ad-avatar-ctl { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.ad-avatar-ctl input[type="text"] {
+  flex: 1; min-width: 180px; height: 36px; padding: 0 12px; font-size: 13px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; outline: none;
+}
+.ad-avatar-ctl input[type="text"]:focus { border-color: var(--accent); background: var(--surface); }
+
+/* 태그 입력 칩 */
+.ad-chipbox {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  min-height: 38px; padding: 5px 10px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px;
+  cursor: text;
+}
+.ad-chipbox:focus-within { border-color: var(--accent); background: var(--surface); }
+.ad-chips { display: contents; }
+.ad-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  padding: 3px 5px 3px 9px; border-radius: 999px;
+}
+.ad-chip button {
+  width: 16px; height: 16px; border-radius: 50%; font-size: 13px; line-height: 1;
+  color: var(--accent); opacity: .6;
+}
+.ad-chip button:hover { opacity: 1; background: var(--accent); color: #fff; }
+#fTagInput {
+  flex: 1; min-width: 110px; height: 26px; padding: 0; border: 0; background: none;
+  outline: none; font-size: 13.5px; font-weight: 400; color: var(--text);
+}
+
+/* 태그 관리 목록 */
+.ad-taglist { display: flex; flex-direction: column; }
+.ad-tagitem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 4px; border-bottom: 1px dashed var(--line);
+}
+.ad-tagitem:last-child { border-bottom: 0; }
+.ad-tagitem > em { font-style: normal; font-size: 12px; color: var(--accent); font-weight: 700; flex: none; }
+.ad-tagposts { flex: 1; min-width: 0; font-size: 11.5px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-tagbtns { display: flex; gap: 6px; flex: none; }
+.ad-tagbtns .btn-line { padding: 6px 12px; font-size: 12.5px; }
+
+.ad-modal-input {
+  width: 100%; height: 38px; padding: 0 12px; margin-bottom: 16px; font-size: 14px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; outline: none;
+}
+.ad-modal-input:focus { border-color: var(--accent); }
+
+@media (max-width: 720px) {
+  .ad-tagitem { flex-wrap: wrap; }
+  .ad-tagposts { display: none; }
+  .ad-avatar-ctl input[type="text"] { min-width: 100%; }
+}
+.ad-form .ad-field { display: flex; flex-direction: column; gap: 5px; }
+.ad-fieldlabel { font-size: 12.5px; font-weight: 600; color: var(--muted); }

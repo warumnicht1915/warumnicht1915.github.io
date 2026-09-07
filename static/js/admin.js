@@ -23,7 +23,9 @@
   var siteCfg = null, siteSha = '';
   var navData = null, navSha = '';
   var noticeData = null, noticeSha = '';
-  var editing = null;  // 수정 중인 글의 path (새 글이면 null)
+  var editing = null;      // 수정 중인 글 (새 글이면 null)
+  var editorReady = false; // 편집기를 한 번이라도 열었는지
+  var tagsInEditor = [];   // 편집 중인 글의 태그 목록
 
   var GH = window.GaonGH;
   if (!GH) { console.error('gh.js 가 먼저 로드되어야 합니다.'); return; }
@@ -101,7 +103,11 @@
 
   /* ── 탭 ────────────────────────────────────────────── */
   $$('.ad-tabs button').forEach(function (b) {
-    b.addEventListener('click', function () { showTab(b.dataset.tab); });
+    b.addEventListener('click', function () {
+      // 편집기를 처음 열 때는 항상 지금 시각으로 새 글을 준비한다
+      if (b.dataset.tab === 'write' && !editorReady) openEditor(null);
+      showTab(b.dataset.tab);
+    });
   });
   function showTab(name) {
     $$('.ad-tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
@@ -122,6 +128,7 @@
       posts = list.sort(function (a, b) { return String(b.name).localeCompare(String(a.name)); });
       renderPosts();
       fillCategories();
+      renderTags();
     }).catch(fail);
   }
 
@@ -185,19 +192,22 @@
 
   function openEditor(post) {
     editing = post || null;
+    editorReady = true;
     $('#adEditTitle').textContent = post ? '글 수정' : '새 글 쓰기';
     $('#adSave').textContent = post ? '수정 저장' : '발행하기';
 
     var m = post ? post.meta : {};
-    var d = new Date();
+    var now = new Date();
+    var today = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    var nowTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
     var dateStr = String(m.date || '');
+
     $('#fTitle').value = m.title || '';
     $('#fSubtitle').value = m.subtitle || '';
-    $('#fDate').value = dateStr.slice(0, 10) ||
-      (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));
-    $('#fTime').value = (dateStr.slice(11, 16)) || (pad(d.getHours()) + ':' + pad(d.getMinutes()));
+    $('#fDate').value = post ? (dateStr.slice(0, 10) || today) : today;
+    $('#fTime').value = post ? (dateStr.slice(11, 16) || nowTime) : nowTime;
     $('#fCategory').value = [].concat(m.categories || []).join(', ');
-    $('#fTags').value = [].concat(m.tags || []).join(', ');
+    setTags([].concat(m.tags || []));
     $('#fDesc').value = m.description || '';
     $('#fImage').value = m.image || '';
     $('#fPinned').checked = m.pinned === true;
@@ -219,7 +229,7 @@
       subtitle: $('#fSubtitle').value.trim(),
       date: date + ' ' + time,
       categories: splitList($('#fCategory').value),
-      tags: splitList($('#fTags').value),
+      tags: tagsInEditor.slice(),
       image: $('#fImage').value.trim(),
       pinned: $('#fPinned').checked,
       draft: $('#fDraft').checked,
@@ -251,6 +261,54 @@
 
   function splitList(v) {
     return String(v || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
+  /* ── 태그 칩 ───────────────────────────────────────── */
+  function setTags(list) {
+    tagsInEditor = [];
+    (list || []).forEach(addTag);
+    renderChips();
+  }
+  function addTag(name) {
+    var t = String(name || '').trim().replace(/^#/, '');
+    if (!t || t.length > 24) return;
+    if (tagsInEditor.some(function (x) { return x.toLowerCase() === t.toLowerCase(); })) return;
+    tagsInEditor.push(t);
+  }
+  function renderChips() {
+    // 인덱스가 아니라 이름으로 지운다. 클릭이 두 번 전달돼도 결과가 같다.
+    $('#fTagChips').innerHTML = tagsInEditor.map(function (t) {
+      return '<span class="ad-chip">#' + esc(t) +
+        '<button type="button" data-chip="' + esc(t) + '" aria-label="' + esc(t) + ' 태그 빼기">×</button></span>';
+    }).join('');
+  }
+
+  var tagInput = $('#fTagInput');
+  if (tagInput) {
+    tagInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addTag(tagInput.value); tagInput.value = ''; renderChips();
+      } else if (e.key === 'Backspace' && !tagInput.value && tagsInEditor.length) {
+        tagsInEditor.pop(); renderChips();
+      }
+    });
+    tagInput.addEventListener('blur', function () {
+      if (tagInput.value.trim()) { addTag(tagInput.value); tagInput.value = ''; renderChips(); }
+    });
+    $('#fTagChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-chip]');
+      if (!b) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var name = b.dataset.chip;
+      var before = tagsInEditor.length;
+      tagsInEditor = tagsInEditor.filter(function (t) { return t !== name; });
+      if (tagsInEditor.length !== before) renderChips();
+    });
+    $('#fTagBox').addEventListener('click', function (e) {
+      if (e.target.id === 'fTagBox' || e.target.id === 'fTagChips') tagInput.focus();
+    });
   }
 
   /* 미리보기 — 빌드에 쓰는 것과 같은 파서를 쓴다 */
@@ -291,6 +349,7 @@
       $('#sGithub').value = a.github || '';
       $('#sEmail').value = a.email || '';
       $('#sAvatar').value = a.avatar || '';
+      paintAvatar();
       $('#sPerPage').value = siteCfg.perPage || 6;
       var g = (siteCfg.comments && siteCfg.comments.giscus) || {};
       $('#gRepoId').value = g.repoId || '';
@@ -390,6 +449,211 @@
       .then(function (r) { navSha = r.content.sha; say('저장했습니다. 1~2분 뒤 반영됩니다.', 'ok'); })
       .catch(fail);
   });
+
+
+  /* ── 프로필 이미지 업로드 ──────────────────────────── */
+  var AVATAR_MAX = 2 * 1024 * 1024;   // 2MB
+  var avatarInput = $('#sAvatar');
+
+  function paintAvatar() {
+    var v = (avatarInput.value || '').trim();
+    var url = /^https?:\/\//.test(v) ? v : (CFG.baseurl || '') + (v || '/assets/img/avatar.svg');
+    $('#sAvatarPreview').src = url;
+  }
+  if (avatarInput) avatarInput.addEventListener('input', paintAvatar);
+
+  var pick = $('#sAvatarPick');
+  if (pick) {
+    pick.addEventListener('click', function () { $('#sAvatarFile').click(); });
+
+    $('#sAvatarReset').addEventListener('click', function () {
+      avatarInput.value = '/assets/img/avatar.svg';
+      paintAvatar();
+      say('기본 이미지로 되돌렸습니다. “설정 저장”을 눌러야 반영됩니다.', 'info');
+    });
+
+    $('#sAvatarFile').addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > AVATAR_MAX) {
+        say('이미지가 너무 큽니다 (' + Math.round(file.size / 1024) + 'KB). 2MB 이하로 줄여주세요.', 'error');
+        e.target.value = '';
+        return;
+      }
+
+      var ext = ({
+        'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
+        'image/gif': 'gif', 'image/svg+xml': 'svg',
+      })[file.type];
+      if (!ext) { say('지원하지 않는 형식입니다: ' + file.type, 'error'); e.target.value = ''; return; }
+
+      var name = 'avatar-' + Date.now() + '.' + ext;
+      var repoPath = 'static/img/' + name;
+
+      say('이미지를 올리는 중…', 'busy');
+      var reader = new FileReader();
+      reader.onload = function () {
+        // data URL 의 base64 부분만 잘라 그대로 올린다 (바이너리 그대로 보존)
+        var b64 = String(reader.result).split(',')[1];
+        GH.call('/repos/' + REPO + '/contents/' + encodeURI(repoPath), {
+          method: 'PUT',
+          body: { message: '프로필 이미지 변경', content: b64, branch: 'main' },
+        }).then(function () {
+          avatarInput.value = '/assets/img/' + name;
+          paintAvatar();
+          say('올렸습니다. 이어서 “설정 저장”을 눌러주세요.', 'ok');
+        }).catch(fail);
+      };
+      reader.onerror = function () { say('파일을 읽지 못했습니다.', 'error'); };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
+
+  /* ── 태그 전체 관리 (이름 변경 · 삭제) ─────────────── */
+  function allTags() {
+    var map = {};
+    posts.forEach(function (p) {
+      [].concat(p.meta.tags || []).forEach(function (t) {
+        var key = String(t);
+        if (!map[key]) map[key] = [];
+        map[key].push(p);
+      });
+    });
+    return Object.keys(map).sort(function (a, b) {
+      return map[b].length - map[a].length || a.localeCompare(b, 'ko');
+    }).map(function (name) { return { name: name, posts: map[name] }; });
+  }
+
+  function renderTags() {
+    var ul = $('#adTagList');
+    if (!ul) return;
+    var list = allTags();
+    $('#adTagCount').textContent = list.length + '개';
+
+    // 편집기 자동완성 목록도 함께 채운다
+    var dl = $('#adTagOptions');
+    if (dl) dl.innerHTML = list.map(function (t) { return '<option value="' + esc(t.name) + '">'; }).join('');
+
+    if (!list.length) { ul.innerHTML = '<li class="ad-empty">아직 태그가 없습니다.</li>'; return; }
+    ul.innerHTML = list.map(function (t, i) {
+      return '<li class="ad-tagitem">' +
+        '<span class="tag mid">#' + esc(t.name) + '</span>' +
+        '<em>' + t.posts.length + '개 글</em>' +
+        '<span class="ad-tagposts">' +
+          esc(t.posts.map(function (p) { return p.meta.title || p.name; }).join(', ')).slice(0, 80) +
+        '</span>' +
+        '<span class="ad-tagbtns">' +
+          '<button type="button" class="btn-line" data-tag-rename="' + i + '">이름 변경</button>' +
+          '<button type="button" class="btn-line danger" data-tag-del="' + i + '">삭제</button>' +
+        '</span></li>';
+    }).join('');
+  }
+
+  /** 여러 글의 태그 목록을 한 번에 고쳐 쓴다. */
+  function rewriteTag(target, replacement) {
+    var affected = posts.filter(function (p) {
+      return [].concat(p.meta.tags || []).some(function (t) { return t === target; });
+    });
+    if (!affected.length) return Promise.resolve(0);
+
+    var message = replacement
+      ? '태그 이름 변경: ' + target + ' → ' + replacement
+      : '태그 삭제: ' + target;
+
+    // 한 글씩 순서대로 커밋한다 (동시에 보내면 sha 충돌이 난다)
+    return affected.reduce(function (chain, p) {
+      return chain.then(function () {
+        var next = [].concat(p.meta.tags || [])
+          .map(function (t) { return t === target ? replacement : t; })
+          .filter(Boolean);
+        // 중복 제거
+        next = next.filter(function (t, i) { return next.indexOf(t) === i; });
+
+        var meta = Object.assign({}, p.meta, { tags: next });
+        meta.categories = [].concat(p.meta.categories || []);
+        var text = buildFM(meta, p.body);
+        return putFile(p.path, text, message, p.sha);
+      });
+    }, Promise.resolve()).then(function () { return affected.length; });
+  }
+
+  var tagList = $('#adTagList');
+  if (tagList) {
+    tagList.addEventListener('click', function (e) {
+      var del = e.target.closest('[data-tag-del]');
+      var ren = e.target.closest('[data-tag-rename]');
+      var list = allTags();
+
+      if (del) {
+        var t = list[+del.dataset.tagDel];
+        confirmBox('태그를 삭제할까요?',
+          '“#' + t.name + '” 태그가 ' + t.posts.length + '개 글에서 제거됩니다. 글 자체는 그대로 남습니다.')
+          .then(function (yes) {
+            if (!yes) return;
+            say('태그를 지우는 중…', 'busy');
+            rewriteTag(t.name, null)
+              .then(function (n) {
+                say(n + '개 글에서 “#' + t.name + '” 을 지웠습니다. 1~2분 뒤 반영됩니다.', 'ok');
+                return loadPosts();
+              })
+              .catch(fail);
+          });
+      }
+
+      if (ren) {
+        var t2 = list[+ren.dataset.tagRename];
+        promptBox('태그 이름 변경', '“#' + t2.name + '” 을 무엇으로 바꿀까요?', t2.name)
+          .then(function (value) {
+            var next = String(value || '').trim().replace(/^#/, '');
+            if (!next || next === t2.name) return;
+            say('태그를 바꾸는 중…', 'busy');
+            rewriteTag(t2.name, next)
+              .then(function (n) {
+                say(n + '개 글의 태그를 “#' + next + '” 로 바꿨습니다.', 'ok');
+                return loadPosts();
+              })
+              .catch(fail);
+          });
+      }
+    });
+  }
+
+  var reloadTags = $('#adTagReload');
+  if (reloadTags) {
+    reloadTags.addEventListener('click', function () {
+      say('불러오는 중…', 'busy');
+      loadPosts().then(function () { say('최신 상태입니다.', 'ok'); });
+    });
+  }
+
+  /** 입력을 받는 모달 (window.prompt 대신) */
+  function promptBox(title, text, initial) {
+    return new Promise(function (resolve) {
+      var wrap = document.createElement('div');
+      wrap.className = 'ad-modal';
+      wrap.innerHTML =
+        '<div class="ad-modal-box" role="dialog" aria-modal="true">' +
+        '<b></b><p></p><input type="text" class="ad-modal-input">' +
+        '<div class="ad-modal-btns">' +
+        '<button type="button" class="btn-line" data-no>취소</button>' +
+        '<button type="button" class="btn ad-primary" data-yes>바꾸기</button>' +
+        '</div></div>';
+      wrap.querySelector('b').textContent = title;
+      wrap.querySelector('p').textContent = text;
+      var input = wrap.querySelector('input');
+      input.value = initial || '';
+      document.body.appendChild(wrap);
+      input.focus();
+      input.select();
+
+      var done = function (v) { wrap.remove(); resolve(v); };
+      wrap.querySelector('[data-yes]').onclick = function () { done(input.value); };
+      wrap.querySelector('[data-no]').onclick = function () { done(null); };
+      input.onkeydown = function (e) { if (e.key === 'Enter') done(input.value); };
+      wrap.onclick = function (e) { if (e.target === wrap) done(null); };
+    });
+  }
 
   /** 블로그 화면의 "새 글 / 수정" 버튼에서 넘어온 요청을 처리한다. */
   function applyQuery() {

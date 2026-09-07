@@ -56,6 +56,7 @@ script: /assets/js/admin.js
         <button type="button" data-tab="posts" class="on" role="tab">글 관리</button>
         <button type="button" data-tab="write" role="tab">새 글</button>
         <button type="button" data-tab="site" role="tab">프로필 · 설정</button>
+        <button type="button" data-tab="tags" role="tab">태그</button>
         <button type="button" data-tab="data" role="tab">메뉴 · 공지</button>
       </nav>
       <button type="button" class="ad-logout" id="adLogout">로그아웃</button>
@@ -92,7 +93,14 @@ script: /assets/js/admin.js
           </div>
           <div class="ad-row">
             <label>게시판(카테고리) <input type="text" id="fCategory" list="adCats" placeholder="개발"></label>
-            <label>태그 <input type="text" id="fTags" placeholder="쉼표로 구분"></label>
+            <div class="ad-field">
+              <span class="ad-fieldlabel">태그</span>
+              <div class="ad-chipbox" id="fTagBox">
+                <span class="ad-chips" id="fTagChips"></span>
+                <input type="text" id="fTagInput" list="adTagOptions" aria-label="태그 입력"
+                       placeholder="입력 후 Enter · 쉼표">
+              </div>
+            </div>
           </div>
           <label>요약 <input type="text" id="fDesc" placeholder="검색·미리보기에 쓰입니다"></label>
           <label>대표 이미지 <input type="text" id="fImage" placeholder="/assets/img/cover.png (선택)"></label>
@@ -131,7 +139,19 @@ script: /assets/js/admin.js
         <label>프로필 소개 <input type="text" id="sBio"></label>
         <label>GitHub 아이디 <input type="text" id="sGithub"></label>
         <label>공개 이메일 <input type="text" id="sEmail" placeholder="비워두면 메일 아이콘이 숨겨집니다"></label>
-        <label>프로필 이미지 경로 <input type="text" id="sAvatar"></label>
+        <div class="ad-avatar wide">
+          <span class="ad-avatar-label">프로필 이미지</span>
+          <div class="ad-avatar-row">
+            <img id="sAvatarPreview" src="" alt="현재 프로필 이미지" width="64" height="64">
+            <div class="ad-avatar-ctl">
+              <input type="file" id="sAvatarFile" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden>
+              <button type="button" class="btn-line" id="sAvatarPick">이미지 업로드</button>
+              <button type="button" class="btn-line" id="sAvatarReset">기본 이미지로</button>
+              <input type="text" id="sAvatar" placeholder="/assets/img/avatar.svg 또는 이미지 주소">
+            </div>
+          </div>
+          <p class="ad-hint">PNG · JPG · WEBP · GIF · SVG, 2MB 이하. 업로드하면 저장소의 <code>static/img/</code> 에 들어가고 경로가 자동으로 채워집니다.</p>
+        </div>
         <label>한 페이지에 보일 글 수 <input type="number" id="sPerPage" min="1" max="30"></label>
 
         <h4 class="ad-sub wide">댓글 (giscus)</h4>
@@ -144,6 +164,20 @@ script: /assets/js/admin.js
         </label>
         <p class="ad-hint wide">비워두면 채팅·접속자·조회수가 이 브라우저 기준으로만 동작합니다.</p>
       </form>
+    </div>
+
+
+    <!-- 태그 관리 -->
+    <div class="ad-panel" data-panel="tags">
+      <div class="ad-panel-head">
+        <h3>태그 관리 <small id="adTagCount"></small></h3>
+        <button type="button" class="btn-line" id="adTagReload">새로고침</button>
+      </div>
+      <p class="ad-hint" style="margin-bottom:14px">
+        이름을 바꾸거나 지우면 그 태그가 쓰인 <b>모든 글</b>이 함께 수정됩니다.
+        글 자체는 지워지지 않습니다.
+      </p>
+      <ul class="ad-taglist" id="adTagList"><li class="ad-empty">불러오는 중…</li></ul>
     </div>
 
     <!-- 메뉴 · 공지 -->
@@ -178,4 +212,5 @@ script: /assets/js/admin.js
 </div>
 
 <datalist id="adCats"></datalist>
+<datalist id="adTagOptions"></datalist>
 <script src="{{ "/assets/js/gaon-md.js" | url }}" defer></script>
