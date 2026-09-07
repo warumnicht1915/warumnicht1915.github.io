@@ -984,3 +984,67 @@ a.tag:hover { color: var(--accent); border-color: var(--accent); background: var
   .ad-tabs { margin-left: 0; width: 100%; }
   .ad-tabs button { flex: 1; }
 }
+
+/* ============================================================
+   19. 소유자 전용 조작 (토큰이 있을 때만 나타난다)
+   ============================================================ */
+.ow-fab {
+  position: fixed; left: 22px; bottom: 22px; z-index: 118;
+  display: flex; align-items: center; gap: 8px;
+}
+.ow-write {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 46px; padding: 0 18px 0 15px; border-radius: 999px;
+  background: linear-gradient(135deg, #0f9d58, #17b26a); color: #fff;
+  font-size: 14px; font-weight: 700;
+  box-shadow: 0 8px 22px -8px rgba(15, 157, 88, .75);
+  transition: transform .16s;
+}
+.ow-write:hover { transform: translateY(-2px); }
+.ow-write svg { width: 18px; height: 18px; }
+.ow-panel {
+  display: inline-flex; align-items: center; height: 46px; padding: 0 15px;
+  border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.ow-panel:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 글 상세 · 카드의 작은 버튼 */
+.owner-slot { display: inline-flex; gap: 6px; }
+.ow-mini {
+  font-size: 11.5px; font-weight: 700; color: var(--accent);
+  background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  padding: 4px 11px; border-radius: 999px; transition: all .14s;
+}
+.ow-mini:hover { background: var(--accent); color: #fff; }
+.ow-mini.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+.ow-mini.danger:hover { background: var(--danger); color: #fff; }
+
+.card { position: relative; }
+.ow-cardbar {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  display: flex; gap: 5px; opacity: 0; transform: translateY(-4px);
+  transition: opacity .16s, transform .16s;
+}
+.card:hover .ow-cardbar, .card:focus-within .ow-cardbar { opacity: 1; transform: none; }
+.ow-cardbar .ow-mini { backdrop-filter: blur(6px); background: color-mix(in srgb, var(--surface) 88%, transparent); }
+.ow-cardbar .ow-mini.danger { background: color-mix(in srgb, var(--surface) 88%, transparent); }
+@media (hover: none) { .ow-cardbar { opacity: 1; transform: none; } }
+
+/* 알림 토스트 */
+.ow-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 210;
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 12px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  color: var(--text-2);
+}
+.ow-toast.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.ow-toast.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+
+@media (max-width: 720px) {
+  .ow-fab { left: 16px; bottom: 16px; }
+  .ow-write { height: 42px; padding: 0 15px 0 13px; font-size: 13px; }
+  .ow-panel { height: 42px; padding: 0 13px; }
+}

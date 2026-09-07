@@ -1,7 +1,7 @@
 ---
 layout: base
 ---
-<article class="paper post">
+<article class="paper post" data-src="{{ page.srcPath }}" data-url="{{ page.url }}">
   <nav class="crumb" aria-label="현재 위치">
     <a href="{{ "/" | url }}">홈</a><span>/</span>
     <a href="{{ page.category | slugify | catUrl }}">{{ page.category }}</a><span>/</span>
@@ -17,6 +17,7 @@ layout: base
       <time datetime="{{ page.iso }}">{% include "icon.html" name="calendar" %}{{ page.dateFull }}</time>
       <span>{% include "icon.html" name="clock" %}{{ page.readingTime }}분 읽기</span>
       <span class="views" data-views="{{ page.url }}">{% include "icon.html" name="eye" %}<b>–</b></span>
+      <span class="owner-slot" data-owner-post></span>
     </div>
   </header>
 

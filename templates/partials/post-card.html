@@ -1,4 +1,4 @@
-<article class="card">
+<article class="card" data-src="{{ post.srcPath }}" data-url="{{ post.url }}">
   <a class="card-a" href="{{ post.url | url }}">
     <div class="card-thumb{% if not post.image %} noimg{% end %}">
       {% if post.image %}<img src="{{ post.image | url }}" alt="{{ post.title }}" loading="lazy" decoding="async">

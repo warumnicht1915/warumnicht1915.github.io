@@ -55,6 +55,7 @@ function buildPost(file, config) {
   return {
     type: 'post',
     file,
+    srcPath: path.relative(path.join(__dirname, '..'), file).split(path.sep).join('/'),
     slug,
     url,
     title: data.title || slug,

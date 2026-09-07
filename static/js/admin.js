@@ -12,15 +12,12 @@
 
   var CFG = window.GAON_CONFIG || {};
   var REPO = CFG.repo || '';
-  var TOKEN_KEY = 'gaon.gh.token';
-  var API = 'https://api.github.com';
 
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   var root = $('#admin');
   if (!root) return;
 
-  var token = '';
   var me = null;
   var posts = [];      // {path, sha, name, meta, body}
   var siteCfg = null, siteSha = '';
@@ -28,64 +25,10 @@
   var noticeData = null, noticeSha = '';
   var editing = null;  // 수정 중인 글의 path (새 글이면 null)
 
-  /* ── UTF-8 안전 base64 ─────────────────────────────── */
-  function toB64(str) {
-    var bytes = new TextEncoder().encode(str);
-    var bin = '';
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return btoa(bin);
-  }
-  function fromB64(b64) {
-    var bin = atob(String(b64).replace(/\s/g, ''));
-    var bytes = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
+  var GH = window.GaonGH;
+  if (!GH) { console.error('gh.js 가 먼저 로드되어야 합니다.'); return; }
 
-  /* ── GitHub API ────────────────────────────────────── */
-  function gh(path, options) {
-    options = options || {};
-    return fetch(API + path, {
-      method: options.method || 'GET',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: 'Bearer ' + token,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    }).then(function (res) {
-      if (res.status === 204) return null;
-      return res.json().then(function (data) {
-        if (!res.ok) {
-          var msg = (data && data.message) || ('HTTP ' + res.status);
-          if (res.status === 401) msg = '토큰이 만료됐거나 잘못되었습니다.';
-          if (res.status === 403) msg = '권한이 부족합니다. 토큰의 Contents 권한을 확인하세요.';
-          if (res.status === 404) msg = '파일이나 저장소를 찾을 수 없습니다: ' + path;
-          if (res.status === 409) msg = '다른 곳에서 먼저 수정됐습니다. 새로고침 후 다시 시도하세요.';
-          throw new Error(msg);
-        }
-        return data;
-      });
-    });
-  }
-
-  function getFile(path) {
-    return gh('/repos/' + REPO + '/contents/' + encodeURI(path) + '?ref=main')
-      .then(function (d) { return { sha: d.sha, text: fromB64(d.content) }; });
-  }
-  function listDir(path) {
-    return gh('/repos/' + REPO + '/contents/' + encodeURI(path) + '?ref=main');
-  }
-  function putFile(path, text, message, sha) {
-    var body = { message: message, content: toB64(text), branch: 'main' };
-    if (sha) body.sha = sha;
-    return gh('/repos/' + REPO + '/contents/' + encodeURI(path), { method: 'PUT', body: body });
-  }
-  function deleteFile(path, sha, message) {
-    return gh('/repos/' + REPO + '/contents/' + encodeURI(path),
-      { method: 'DELETE', body: { message: message, sha: sha, branch: 'main' } });
-  }
+  var getFile = GH.getFile, listDir = GH.listDir, putFile = GH.putFile, deleteFile = GH.deleteFile;
 
   /* ── 알림 ──────────────────────────────────────────── */
   var statusEl = $('#adStatus');
@@ -117,55 +60,23 @@
     });
   }
 
-  /* ── front matter 다루기 ───────────────────────────── */
-  function parseFM(text) {
-    var m = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-    if (!m) return { meta: {}, body: text };
-    var meta = {};
-    m[1].split('\n').forEach(function (line) {
-      var kv = line.match(/^([\w]+):\s*(.*)$/);
-      if (!kv) return;
-      var k = kv[1], v = kv[2].trim();
-      if (v === 'true') v = true;
-      else if (v === 'false') v = false;
-      else if (/^\[.*\]$/.test(v)) {
-        v = v.slice(1, -1).split(',').map(function (x) { return x.trim(); }).filter(Boolean);
-      } else v = v.replace(/^["']|["']$/g, '');
-      meta[k] = v;
-    });
-    return { meta: meta, body: m[2] };
-  }
-
-  function buildFM(meta, body) {
-    var lines = ['---'];
-    var push = function (k, v) { lines.push(k + ': ' + v); };
-    push('title', meta.title);
-    if (meta.subtitle) push('subtitle', meta.subtitle);
-    push('date', meta.date);
-    push('categories', '[' + (meta.categories || []).join(', ') + ']');
-    push('tags', '[' + (meta.tags || []).join(', ') + ']');
-    if (meta.image) push('image', meta.image);
-    if (meta.pinned) push('pinned', 'true');
-    if (meta.draft) push('draft', 'true');
-    if (meta.description) push('description', meta.description);
-    lines.push('---', '');
-    return lines.join('\n') + body.replace(/^\n+/, '') + '\n';
-  }
+  /* ── front matter (gh.js 공용) ─────────────────────── */
+  var parseFM = GH.parseFM, buildFM = GH.buildFM;
 
   /* ── 로그인 ────────────────────────────────────────── */
   var gate = $('#adGate'), app = $('#adApp');
 
   function connect(t, remember) {
-    token = t;
-    return gh('/user').then(function (user) {
+    GH.setToken(t);
+    return GH.me().then(function (user) {
       me = user;
-      if (remember) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
+      if (remember) GH.setToken(t);
       $('#adUser').textContent = user.login;
       $('#adAvatar').src = user.avatar_url;
       $('#adRepo').textContent = REPO;
       gate.hidden = true;
       app.hidden = false;
-      return Promise.all([loadPosts(), loadSite(), loadData()]);
+      return Promise.all([loadPosts(), loadSite(), loadData()]).then(applyQuery);
     });
   }
 
@@ -175,14 +86,14 @@
     if (!t) return;
     $('#adLoginMsg').textContent = '확인 중…';
     connect(t, $('#adRemember').checked).catch(function (err) {
-      token = '';
+      if (!$('#adRemember').checked) GH.clearToken();
       $('#adLoginMsg').textContent = err.message;
     });
   });
 
   $('#adLogout').addEventListener('click', function () {
-    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-    token = ''; me = null;
+    GH.clearToken();
+    me = null;
     app.hidden = true; gate.hidden = false;
     $('#adToken').value = '';
     $('#adLoginMsg').textContent = '로그아웃했습니다. 토큰을 지웠습니다.';
@@ -480,18 +391,31 @@
       .catch(fail);
   });
 
+  /** 블로그 화면의 "새 글 / 수정" 버튼에서 넘어온 요청을 처리한다. */
+  function applyQuery() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('new') !== null) { openEditor(null); cleanUrl(); return; }
+    var target = q.get('edit');
+    if (!target) return;
+    var found = posts.filter(function (p) { return p.path === target; })[0];
+    if (found) openEditor(found);
+    else say('그 글을 찾지 못했습니다: ' + target, 'error');
+    cleanUrl();
+  }
+  function cleanUrl() {
+    history.replaceState(null, '', location.pathname);
+  }
+
   /* ── 시작 ──────────────────────────────────────────── */
   if (!REPO) {
     $('#adLoginMsg').textContent =
       'site.config.json 의 comments.giscus.repo 에 "소유자/저장소" 를 먼저 채워주세요.';
     return;
   }
-  var saved = '';
-  try { saved = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) {}
+  var saved = GH.getToken();
   if (saved) {
     connect(saved, true).catch(function (err) {
-      token = '';
-      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      GH.clearToken();
       $('#adLoginMsg').textContent = err.message + ' 다시 연결해 주세요.';
     });
   }
