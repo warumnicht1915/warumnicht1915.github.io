@@ -12,6 +12,7 @@
   var fmt = function (n) { return Number(n || 0).toLocaleString('ko-KR'); };
 
   if (!Store) return;
+  var isOwner = !!(window.GaonGH && window.GaonGH.getToken());
 
   /* ── 1. 인기 검색어 ───────────────────────────────── */
   var trendList = $('#trendList');
@@ -26,7 +27,10 @@
             '<span class="no">' + t.rank + '</span>' +
             '<span class="kw">' + esc(t.kw) + '</span>' +
             '<span class="dt ' + t.delta + '">' + t.deltaText + '</span>' +
-            '</button></li>';
+            '</button>' +
+            (isOwner ? '<button type="button" class="trend-x" data-kwdel="' + esc(t.kw) +
+              '" title="이 검색어 지우기" aria-label="지우기">×</button>' : '') +
+            '</li>';
         }).join('');
       }
       if (trendChips) {
@@ -51,7 +55,17 @@
     Store.onTrendsChange(paintTrends);
     setInterval(paintTrends, 60000);
 
+    // 관리자: 검색어 삭제
     document.addEventListener('click', function (e) {
+      var x = e.target.closest && e.target.closest('[data-kwdel]');
+      if (!x || !isOwner) return;
+      e.preventDefault();
+      e.stopPropagation();
+      Store.removeTrend(x.dataset.kwdel).then(paintTrends);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-kwdel]')) return;
       var b = e.target.closest && e.target.closest('[data-kw]');
       if (!b) return;
       var kw = b.dataset.kw;
@@ -85,16 +99,24 @@
 
   var vToday = $('#vToday');
   if (vToday) {
-    Store.visitors().then(function (v) {
-      vToday.textContent = fmt(v.today);
-      var y = $('#vYest'), t = $('#vTotal'), note = $('#vNote'), foot = $('#footVisitors');
-      if (y) y.textContent = fmt(v.yesterday);
-      if (t) t.textContent = fmt(v.total);
-      if (foot) foot.textContent = '오늘 ' + fmt(v.today) + ' · 전체 ' + fmt(v.total);
+    Store.trackVisit().then(function (v) {
+      var set = function (sel, val) { var el = $(sel); if (el) el.textContent = fmt(val); };
+      set('#vToday', v.today.uv);
+      set('#vYest', v.yesterday.uv);
+      set('#vTotal', v.total.uv);
+      set('#pvToday', v.today.pv);
+      set('#pvTotal', v.total.pv);
+
+      var foot = $('#footVisitors');
+      if (foot) {
+        foot.textContent = '오늘 ' + fmt(v.today.uv) + '명 · 전체 ' + fmt(v.total.uv) +
+          '명 · 누적 조회 ' + fmt(v.total.pv);
+      }
+      var note = $('#vNote');
       if (note) {
         note.textContent = v.shared
-          ? '모든 방문자가 함께 보는 실제 집계입니다.'
-          : '실시간 DB가 설정되지 않아 이 브라우저 기준으로만 셉니다.';
+          ? '모든 방문자가 함께 보는 실제 집계입니다. (명 = 순 방문자, 조회 = 페이지 열람)'
+          : '실시간 DB가 연결되지 않아 이 브라우저 기준으로만 셉니다.';
       }
     });
   }

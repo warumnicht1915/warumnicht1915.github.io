@@ -1,3 +1,5 @@
+{% include "chat-mascot.html" %}
+
 <button class="chat-fab" id="chatFab" type="button" aria-label="실시간 채팅 열기" aria-expanded="false">
   {% include "icon.html" name="chat" %}<span class="fab-dot" id="chatDot" hidden></span>
 </button>
@@ -8,13 +10,44 @@
       <b>{% include "icon.html" name="chat" %} 실시간 채팅</b>
       <span class="chat-on"><i class="pulse"></i><em id="chatOnline">–</em>명 접속 중</span>
     </div>
-    <button class="ibtn" id="chatClose" type="button" aria-label="채팅 닫기">{% include "icon.html" name="x" %}</button>
+    <div class="chat-head-btns">
+      <button class="ibtn owner-only" id="chatClear" type="button" title="대화 모두 지우기 (관리자)" hidden>
+        {% include "icon.html" name="trash" %}
+      </button>
+      <button class="ibtn" id="chatClose" type="button" aria-label="채팅 닫기">{% include "icon.html" name="x" %}</button>
+    </div>
   </div>
+
   <p class="chat-mode" id="chatMode" hidden></p>
-  <ul class="chat-log" id="chatLog" aria-live="polite"></ul>
+
+  <!-- 불러오는 동안 보여줄 마스코트 -->
+  <div class="chat-loading" id="chatLoading">
+    <svg class="mascot" viewBox="0 0 120 100" role="img" aria-label="대화를 불러오는 중">
+      <use href="#gaon-mascot"></use>
+    </svg>
+    <p>대화를 불러오는 중…</p>
+    <span class="dots"><i></i><i></i><i></i></span>
+  </div>
+
+  <ul class="chat-log" id="chatLog" aria-live="polite" hidden></ul>
+
+  <div class="chat-attach" id="chatAttach" hidden>
+    <img id="chatAttachPreview" src="" alt="보낼 이미지 미리보기">
+    <span id="chatAttachInfo"></span>
+    <button type="button" id="chatAttachCancel" aria-label="이미지 빼기">×</button>
+  </div>
+
   <form class="chat-form" id="chatForm" autocomplete="off">
     <input type="text" id="chatNick" maxlength="12" placeholder="닉네임" aria-label="닉네임">
+    <input type="file" id="chatImgFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+    <button type="button" id="chatImgBtn" aria-label="이미지 첨부" title="이미지 첨부">
+      {% include "icon.html" name="image" %}
+    </button>
     <input type="text" id="chatText" maxlength="300" placeholder="메시지를 입력하세요" aria-label="메시지 입력">
-    <button type="submit" aria-label="보내기">{% include "icon.html" name="send" %}</button>
+    <button type="submit" id="chatSend" aria-label="보내기">{% include "icon.html" name="send" %}</button>
   </form>
+  <p class="chat-quota" id="chatQuota"></p>
 </div>
+
+<!-- 이미지 크게 보기 -->
+<div class="chat-lightbox" id="chatLightbox" hidden><img src="" alt=""></div>

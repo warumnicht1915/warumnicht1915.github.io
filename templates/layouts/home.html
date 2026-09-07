@@ -1,10 +1,17 @@
 ---
 layout: base
 ---
-<section class="hero">
+<section class="hero{% if site.brand.heroImage %} has-img{% end %}"
+  {% if site.brand.heroImage %}style="--hero-img:url('{{ site.brand.heroImage | url }}');--hero-dim-a:.{{ site.brand.heroOverlay | default: 55 }}"
+  {% else %}style="--hero-bg:{{ site.brand.heroGradient | default: 'linear-gradient(135deg,#2f4fd8,#4c6ef5,#8b5cf6)' }}"{% end %}>
   <div class="hero-t">
     <span class="hero-badge">{% include "icon.html" name="fire" %} 새 글 {{ site.postCount }}개</span>
-    <h1>{{ site.title }}</h1>
+    <h1>{{ site.brand.heroTitle | default: site.title }}</h1>
+    {% if site.brand.heroWords %}
+    <p class="hero-words">
+      {% for w in site.brand.heroWords %}<b>{{ w }}</b>{% if not loop.last %}<i>·</i>{% end %}{% end %}
+    </p>
+    {% end %}
     <p>{{ site.description }}</p>
     <div class="hero-btns">
       <a class="btn" href="{{ "/archive/" | url }}">글목록 보기</a>

@@ -1,0 +1,136 @@
+---
+title: 글쓰기
+permalink: /write/
+layout: bare
+noindex: true
+script: /assets/js/write.js
+---
+
+<div class="wr" id="wr">
+
+  <!-- 토큰이 없을 때 -->
+  <section class="wr-gate" id="wrGate">
+    <div class="wr-gate-box">
+      <h2>{% include "icon.html" name="github" %} 먼저 연결해 주세요</h2>
+      <p>글을 쓰려면 관리자 토큰이 필요합니다. 관리자 페이지에서 한 번만 연결하면 됩니다.</p>
+      <a class="btn ad-primary" href="{{ "/admin/" | url }}">관리자 페이지로 가기</a>
+    </div>
+  </section>
+
+  <!-- 편집기 -->
+  <div class="wr-app" id="wrApp" hidden>
+
+    <header class="wr-top">
+      <a class="wr-back" href="{{ "/" | url }}" title="블로그로 돌아가기">
+        {% include "icon.html" name="home" %}
+      </a>
+      <div class="wr-title-wrap">
+        <input type="text" id="wTitle" class="wr-title" placeholder="제목을 입력하세요" aria-label="글 제목">
+        <input type="text" id="wSubtitle" class="wr-subtitle" placeholder="부제 (선택)" aria-label="부제">
+      </div>
+      <div class="wr-top-btns">
+        <span class="wr-saved" id="wSaved"></span>
+        <button type="button" class="btn-line" id="wMeta">세부 설정</button>
+        <button type="button" class="btn-line" id="wDraft">임시저장</button>
+        <button type="button" class="btn ad-primary" id="wPublish">발행하기</button>
+      </div>
+    </header>
+
+    <p class="wr-status" id="wStatus" hidden></p>
+
+    <!-- 세부 설정 서랍 -->
+    <section class="wr-meta" id="wMetaPanel" hidden>
+      <div class="wr-meta-grid">
+        <label>날짜 <input type="date" id="wDate"></label>
+        <label>시각 <input type="time" id="wTime"></label>
+        <label>게시판 <input type="text" id="wCategory" list="wCats" placeholder="개발"></label>
+        <div class="ad-field">
+          <span class="ad-fieldlabel">태그</span>
+          <div class="ad-chipbox" id="wTagBox">
+            <span class="ad-chips" id="wTagChips"></span>
+            <input type="text" id="wTagInput" list="wTagOptions" aria-label="태그 입력" placeholder="Enter 로 추가">
+          </div>
+        </div>
+        <label class="wide">요약 <input type="text" id="wDesc" placeholder="목록·검색에 보일 한 줄"></label>
+        <div class="ad-avatar wide">
+          <span class="ad-avatar-label">대표 이미지</span>
+          <div class="ad-avatar-row">
+            <img id="wCoverPreview" src="" alt="" width="88" height="56" hidden>
+            <div class="ad-avatar-ctl">
+              <input type="file" id="wCoverFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+              <button type="button" class="btn-line" id="wCoverPick">이미지 올리기</button>
+              <button type="button" class="btn-line" id="wCoverClear">지우기</button>
+              <input type="text" id="wImage" placeholder="/assets/img/cover.png">
+            </div>
+          </div>
+        </div>
+        <div class="wr-meta-checks wide">
+          <label class="ad-check"><input type="checkbox" id="wPinned"> 홈 상단에 고정</label>
+          <label class="ad-check"><input type="checkbox" id="wDraftFlag"> 초안 (발행하지 않음)</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 도구 모음 -->
+    <div class="wr-tools" id="wTools">
+      <div class="wr-tool-group">
+        <button type="button" data-md="h2" title="제목 (Ctrl+2)"><b>H2</b></button>
+        <button type="button" data-md="h3" title="소제목 (Ctrl+3)"><b>H3</b></button>
+      </div>
+      <div class="wr-tool-group">
+        <button type="button" data-md="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
+        <button type="button" data-md="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
+        <button type="button" data-md="strike" title="취소선"><s>S</s></button>
+        <button type="button" data-md="mark" title="형광펜"><span class="tool-mark">H</span></button>
+      </div>
+      <div class="wr-tool-group">
+        <button type="button" data-md="link" title="링크 (Ctrl+K)">{% include "icon.html" name="link" %}</button>
+        <button type="button" data-md="image" title="이미지 올리기">{% include "icon.html" name="image" %}</button>
+        <button type="button" data-md="code" title="코드 블록">{ }</button>
+        <button type="button" data-md="quote" title="인용">&gt;</button>
+      </div>
+      <div class="wr-tool-group">
+        <button type="button" data-md="ul" title="목록">{% include "icon.html" name="list" %}</button>
+        <button type="button" data-md="ol" title="번호 목록">1.</button>
+        <button type="button" data-md="task" title="체크박스">☑</button>
+        <button type="button" data-md="table" title="표">▦</button>
+        <button type="button" data-md="hr" title="구분선">—</button>
+      </div>
+      <div class="wr-tool-group">
+        <button type="button" data-md="tip" title="팁 상자">💡</button>
+        <button type="button" data-md="warn" title="주의 상자">⚠️</button>
+        <button type="button" data-md="more" title="미리보기 구분선">✂︎</button>
+      </div>
+
+      <div class="wr-tool-right">
+        <button type="button" id="wViewSplit" class="on" title="나란히 보기">◫</button>
+        <button type="button" id="wViewEdit" title="편집만">✎</button>
+        <button type="button" id="wViewPreview" title="미리보기만">👁</button>
+        <button type="button" id="wZen" title="집중 모드">⛶</button>
+      </div>
+    </div>
+
+    <!-- 본문 -->
+    <div class="wr-body split" id="wBody">
+      <div class="wr-pane wr-edit">
+        <textarea id="wText" spellcheck="false"
+          placeholder="여기에 본문을 씁니다.&#10;&#10;이미지는 그냥 끌어다 놓아도 되고, 붙여넣기(Ctrl+V)도 됩니다."></textarea>
+      </div>
+      <div class="wr-pane wr-preview">
+        <article class="prose" id="wPreview"></article>
+      </div>
+      <div class="wr-drop" id="wDrop" hidden><span>여기에 놓으면 이미지가 올라갑니다</span></div>
+    </div>
+
+    <footer class="wr-foot">
+      <span id="wCount">0자 · 0단어 · 1분</span>
+      <span class="wr-foot-hint">Ctrl+S 임시저장 · Ctrl+B 굵게 · Ctrl+K 링크 · Ctrl+Enter 발행</span>
+    </footer>
+
+    <input type="file" id="wImgFile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+  </div>
+</div>
+
+<datalist id="wCats"></datalist>
+<datalist id="wTagOptions"></datalist>
+<script src="{{ "/assets/js/gaon-md.js" | url }}" defer></script>

@@ -78,25 +78,48 @@
     ".read": false,
     ".write": false,
 
-    "views":    { ".read": true, ".write": true, "$post": { ".validate": "newData.isNumber()" } },
-    "trends":   { ".read": true, ".write": true, "$kw":   { ".validate": "newData.isNumber()" } },
-    "visits":   { ".read": true, ".write": true },
+    "views":  { ".read": true, ".write": true, "$post": { ".validate": "newData.isNumber()" } },
+
+    "trends": {
+      ".read": true,
+      "$kw": {
+        ".write": true,
+        "n":  { ".validate": "newData.isNumber()" },
+        "kw": { ".validate": "newData.isString() && newData.val().length <= 24" }
+      }
+    },
+
+    "visits": {
+      ".read": true,
+      "days":  { "$day": { "uv": { ".write": true, ".validate": "newData.isNumber()" },
+                           "pv": { ".write": true, ".validate": "newData.isNumber()" } } },
+      "total": { "uv": { ".write": true, ".validate": "newData.isNumber()" },
+                 "pv": { ".write": true, ".validate": "newData.isNumber()" } }
+    },
+
     "presence": {
       ".read": true,
       "$room": { "$client": { ".write": true, ".validate": "newData.hasChild('at')" } }
     },
+
     "rooms": {
       "$room": {
+        "usage": { ".read": true, ".write": true },
         "messages": {
           ".read": true,
           ".indexOn": ".key",
           "$msg": {
-            ".write": "!data.exists()",
-            ".validate": "newData.hasChildren(['n','t','at'])",
-            "n":  { ".validate": "newData.isString() && newData.val().length <= 12"  },
-            "t":  { ".validate": "newData.isString() && newData.val().length <= 300" },
-            "at": { ".validate": "newData.isNumber()" },
-            "by": { ".validate": "newData.isString() && newData.val().length <= 40"  }
+            ".write": true,
+            ".validate": "newData.hasChildren(['n','at']) || newData.hasChild('del')",
+            "n":   { ".validate": "newData.isString() && newData.val().length <= 12"  },
+            "t":   { ".validate": "newData.isString() && newData.val().length <= 300" },
+            "at":  { ".validate": "newData.isNumber()" },
+            "by":  { ".validate": "newData.isString() && newData.val().length <= 40"  },
+            "img": { ".validate": "newData.isString() && newData.val().length <= 220000" },
+            "iw":  { ".validate": "newData.isNumber()" },
+            "ih":  { ".validate": "newData.isNumber()" },
+            "ib":  { ".validate": "newData.isNumber()" },
+            "del": { ".validate": "newData.isNumber()" }
           }
         }
       }
@@ -107,9 +130,14 @@
 
 이 규칙은 이렇게 동작합니다.
 
-- 채팅 메시지는 **새로 쓰기만** 가능합니다 (`!data.exists()`) — 남의 글을 고치거나 지울 수 없습니다
-- 닉네임 12자, 메시지 300자를 넘으면 서버가 거부합니다
+- 닉네임 12자, 메시지 300자, 이미지 약 215KB 를 넘으면 서버가 거부합니다
 - 명시한 경로 밖은 읽기도 쓰기도 전부 막힙니다
+- 방문자 수는 `uv`(순 방문자) 와 `pv`(페이지 조회) 를 따로 셉니다
+
+> [!NOTE]
+> 이 규칙은 로그인 없이 누구나 채팅을 쓸 수 있는 대신, 메시지 수정·삭제도 열려 있습니다.
+> 관리자 삭제 기능을 쓰려면 이 형태가 필요합니다. 장난이 심해지면 채팅 관리 화면에서
+> **대화 전부 지우기** 로 초기화하거나, `rooms` 아래 `.write` 를 잠그면 됩니다.
 
 ### 3-3. 설정에 넣기
 
@@ -174,6 +202,46 @@
 > 토큰은 브라우저(localStorage)에만 저장되고 `api.github.com` 외에는 어디로도 가지 않습니다.
 > 그래도 **공용 PC에서는 쓰지 마세요.** 자리를 뜰 때는 관리자 페이지의 **로그아웃**을 눌러 지우세요.
 > 이 저장소 하나에만 권한을 준 토큰을 쓰면 최악의 경우에도 피해가 이 블로그로 한정됩니다.
+
+### 글쓰기 전용 페이지 `/write/`
+
+`/admin/` 의 **새 글 쓰기** 버튼을 누르면 전용 편집기가 열립니다.
+
+- 마크다운 도구 모음 (제목 · 굵게 · 링크 · 코드 · 표 · 콜아웃 …)
+- 단축키: `Ctrl+B` 굵게, `Ctrl+I` 기울임, `Ctrl+K` 링크, `Ctrl+S` 임시저장, `Ctrl+Enter` 발행
+- 보기 전환: 나란히 / 편집만 / 미리보기만 / 집중 모드(전체화면)
+- 이미지: 버튼 · **끌어다 놓기** · **붙여넣기** 모두 됩니다 (저장소에 올린 뒤 본문에 삽입)
+- 글자 수 · 단어 수 · 예상 읽기 시간
+- 자동 임시저장 (브라우저에 보관하며, 발행하면 지워집니다)
+
+### 배너 · 로고 바꾸기
+
+`/admin/` → **프로필 · 설정** → **최상단 배너** 에서 바꿉니다.
+
+- 헤더 로고: 글자(기본 `W`) 또는 이미지
+- 큰 제목과 그 아래 단어들(기본 `생성 · 기록 · 공유`)
+- 배경 이미지 업로드 + 어둡게 덮는 정도 조절 (비우면 그라데이션)
+
+### 인기 검색어 · 채팅 관리
+
+`/admin/` → **검색어 · 채팅** 탭에서 합니다.
+
+- 인기 검색어를 하나씩 지우거나 전부 비우기 (사이드바 위젯에서도 관리자에게만 × 가 보입니다)
+- 채팅 메시지는 채팅창에서 바로 **지우기** — 지운 자리에는 “삭제된 메시지입니다” 가 남습니다
+- 대화 전부 지우기
+
+### 채팅 이미지
+
+방문자가 채팅에 이미지를 올릴 수 있습니다. 브라우저에서 먼저 축소·압축한 뒤 보내고,
+`site.config.json` 의 `realtime.chat.image` 로 한도를 정합니다.
+
+| 항목 | 기본값 | 뜻 |
+|---|---|---|
+| `maxWidth` | 900 | 긴 변을 이 크기로 줄임 |
+| `maxBytes` | 160000 | 이미지 1장 최대 (약 156KB) |
+| `perUserBytes` | 3000000 | 한 사람당 누적 3MB |
+| `perUserCount` | 20 | 한 사람당 20장 |
+| `totalBytes` | 60000000 | 채팅방 전체 60MB |
 
 ### 방법 B — GitHub 이슈로 쓰기 (토큰 불필요)
 

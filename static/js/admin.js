@@ -23,9 +23,6 @@
   var siteCfg = null, siteSha = '';
   var navData = null, navSha = '';
   var noticeData = null, noticeSha = '';
-  var editing = null;      // 수정 중인 글 (새 글이면 null)
-  var editorReady = false; // 편집기를 한 번이라도 열었는지
-  var tagsInEditor = [];   // 편집 중인 글의 태그 목록
 
   var GH = window.GaonGH;
   if (!GH) { console.error('gh.js 가 먼저 로드되어야 합니다.'); return; }
@@ -103,11 +100,7 @@
 
   /* ── 탭 ────────────────────────────────────────────── */
   $$('.ad-tabs button').forEach(function (b) {
-    b.addEventListener('click', function () {
-      // 편집기를 처음 열 때는 항상 지금 시각으로 새 글을 준비한다
-      if (b.dataset.tab === 'write' && !editorReady) openEditor(null);
-      showTab(b.dataset.tab);
-    });
+    b.addEventListener('click', function () { showTab(b.dataset.tab); });
   });
   function showTab(name) {
     $$('.ad-tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
@@ -117,7 +110,7 @@
   /* ── 글 목록 ───────────────────────────────────────── */
   function loadPosts() {
     return listDir('content/posts').then(function (files) {
-      var mds = files.filter(function (f) { return /\.mdx?$/.test(f.name); });
+      var mds = (Array.isArray(files) ? files : []).filter(function (f) { return /\.mdx?$/.test(f.name); });
       return Promise.all(mds.map(function (f) {
         return getFile(f.path).then(function (r) {
           var parsed = parseFM(r.text);
@@ -187,327 +180,112 @@
     $('#adCats').innerHTML = Object.keys(set).map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
   }
 
-  /* ── 편집기 ────────────────────────────────────────── */
+  /* 글 편집은 전용 페이지(/write/)로 옮겼다. 여기서는 이동만 시킨다. */
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
   function openEditor(post) {
-    editing = post || null;
-    editorReady = true;
-    $('#adEditTitle').textContent = post ? '글 수정' : '새 글 쓰기';
-    $('#adSave').textContent = post ? '수정 저장' : '발행하기';
-
-    var m = post ? post.meta : {};
-    var now = new Date();
-    var today = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
-    var nowTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
-    var dateStr = String(m.date || '');
-
-    $('#fTitle').value = m.title || '';
-    $('#fSubtitle').value = m.subtitle || '';
-    $('#fDate').value = post ? (dateStr.slice(0, 10) || today) : today;
-    $('#fTime').value = post ? (dateStr.slice(11, 16) || nowTime) : nowTime;
-    $('#fCategory').value = [].concat(m.categories || []).join(', ');
-    setTags([].concat(m.tags || []));
-    $('#fDesc').value = m.description || '';
-    $('#fImage').value = m.image || '';
-    $('#fPinned').checked = m.pinned === true;
-    $('#fDraft').checked = m.draft === true;
-    $('#fBody').value = post ? post.body : '';
-    showTab('write');
-    renderPreview();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    location.href = (CFG.baseurl || '') + '/write/' +
+      (post ? '?edit=' + encodeURIComponent(post.path) : '');
   }
 
-  $('#adSave').addEventListener('click', function () {
-    var title = $('#fTitle').value.trim();
-    if (!title) { say('제목을 입력해 주세요.', 'error'); $('#fTitle').focus(); return; }
+  /* ── 이미지 업로드 공용 ────────────────────────────── */
+  var EXT = {
+    'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
+    'image/gif': 'gif', 'image/svg+xml': 'svg',
+  };
 
-    var date = $('#fDate').value || new Date().toISOString().slice(0, 10);
-    var time = $('#fTime').value || '09:00';
-    var meta = {
-      title: title,
-      subtitle: $('#fSubtitle').value.trim(),
-      date: date + ' ' + time,
-      categories: splitList($('#fCategory').value),
-      tags: tagsInEditor.slice(),
-      image: $('#fImage').value.trim(),
-      pinned: $('#fPinned').checked,
-      draft: $('#fDraft').checked,
-      description: $('#fDesc').value.trim(),
-    };
-    var text = buildFM(meta, $('#fBody').value);
-
-    var slug = (window.GaonMD ? window.GaonMD.slugify(title) : title.replace(/\s+/g, '-'));
-    var newPath = 'content/posts/' + date + '-' + slug + '.md';
-    var path = editing ? editing.path : newPath;
-
-    say('저장하는 중…', 'busy');
-    putFile(path, text, (editing ? '글 수정: ' : '새 글: ') + title, editing ? editing.sha : null)
-      .then(function () {
-        // 제목이나 날짜가 바뀌어 파일명이 달라졌으면 옛 파일을 정리한다
-        if (editing && newPath !== editing.path) {
-          return putFile(newPath, text, '글 이동: ' + title, null)
-            .then(function () { return deleteFile(editing.path, editing.sha, '옛 파일 정리: ' + title); });
-        }
-      })
-      .then(function () {
-        say('저장했습니다. 1~2분 뒤 사이트에 반영됩니다.', 'ok');
-        editing = null;
-        showTab('posts');
-        return loadPosts();
-      })
-      .catch(fail);
-  });
-
-  function splitList(v) {
-    return String(v || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
-  }
-
-  /* ── 태그 칩 ───────────────────────────────────────── */
-  function setTags(list) {
-    tagsInEditor = [];
-    (list || []).forEach(addTag);
-    renderChips();
-  }
-  function addTag(name) {
-    var t = String(name || '').trim().replace(/^#/, '');
-    if (!t || t.length > 24) return;
-    if (tagsInEditor.some(function (x) { return x.toLowerCase() === t.toLowerCase(); })) return;
-    tagsInEditor.push(t);
-  }
-  function renderChips() {
-    // 인덱스가 아니라 이름으로 지운다. 클릭이 두 번 전달돼도 결과가 같다.
-    $('#fTagChips').innerHTML = tagsInEditor.map(function (t) {
-      return '<span class="ad-chip">#' + esc(t) +
-        '<button type="button" data-chip="' + esc(t) + '" aria-label="' + esc(t) + ' 태그 빼기">×</button></span>';
-    }).join('');
-  }
-
-  var tagInput = $('#fTagInput');
-  if (tagInput) {
-    tagInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ',') {
-        e.preventDefault();
-        addTag(tagInput.value); tagInput.value = ''; renderChips();
-      } else if (e.key === 'Backspace' && !tagInput.value && tagsInEditor.length) {
-        tagsInEditor.pop(); renderChips();
+  /** 파일을 static/img/<prefix>-<시각>.<확장자> 로 커밋하고 웹 경로를 돌려준다. */
+  function uploadImage(file, prefix, maxBytes) {
+    return new Promise(function (resolve, reject) {
+      if (!file) return reject(new Error('파일이 없습니다.'));
+      if (file.size > (maxBytes || 2 * 1024 * 1024)) {
+        return reject(new Error('이미지가 너무 큽니다 (' + Math.round(file.size / 1024) + 'KB). ' +
+          Math.round((maxBytes || 2097152) / 1048576) + 'MB 이하로 줄여주세요.'));
       }
-    });
-    tagInput.addEventListener('blur', function () {
-      if (tagInput.value.trim()) { addTag(tagInput.value); tagInput.value = ''; renderChips(); }
-    });
-    $('#fTagChips').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-chip]');
-      if (!b) return;
-      e.preventDefault();
-      e.stopPropagation();
-      var name = b.dataset.chip;
-      var before = tagsInEditor.length;
-      tagsInEditor = tagsInEditor.filter(function (t) { return t !== name; });
-      if (tagsInEditor.length !== before) renderChips();
-    });
-    $('#fTagBox').addEventListener('click', function (e) {
-      if (e.target.id === 'fTagBox' || e.target.id === 'fTagChips') tagInput.focus();
+      var ext = EXT[file.type];
+      if (!ext) return reject(new Error('지원하지 않는 형식입니다: ' + file.type));
+
+      var name = prefix + '-' + Date.now() + '.' + ext;
+      var repoPath = 'static/img/' + name;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var b64 = String(reader.result).split(',')[1];
+        GH.call('/repos/' + REPO + '/contents/' + encodeURI(repoPath), {
+          method: 'PUT',
+          body: { message: '이미지 추가: ' + name, content: b64, branch: 'main' },
+        }).then(function () { resolve('/assets/img/' + name); }).catch(reject);
+      };
+      reader.onerror = function () { reject(new Error('파일을 읽지 못했습니다.')); };
+      reader.readAsDataURL(file);
     });
   }
 
-  /* 미리보기 — 빌드에 쓰는 것과 같은 파서를 쓴다 */
-  var previewOn = false;
-  $('#adPreviewBtn').addEventListener('click', function () {
-    previewOn = !previewOn;
-    $('#adPreview').hidden = !previewOn;
-    $('#adPreviewBtn').textContent = previewOn ? '미리보기 끄기' : '미리보기';
-    root.classList.toggle('split', previewOn);
-    renderPreview();
-  });
-  $('#fBody').addEventListener('input', function () { if (previewOn) renderPreview(); });
-  $('#fTitle').addEventListener('input', function () { if (previewOn) renderPreview(); });
+  /** 파일 선택 → 업로드 → 입력칸에 경로 반영, 을 한 번에 묶는다. */
+  function wireUpload(opts) {
+    var pickBtn = $(opts.pick), fileEl = $(opts.file), input = $(opts.input);
+    var clearBtn = opts.clear ? $(opts.clear) : null;
+    if (!pickBtn || !fileEl || !input) return;
 
-  var previewTimer = null;
-  function renderPreview() {
-    if (!previewOn || !window.GaonMD) return;
-    clearTimeout(previewTimer);
-    previewTimer = setTimeout(function () {
-      var title = $('#fTitle').value.trim();
-      var out = window.GaonMD.render($('#fBody').value || '');
-      $('#adPreviewBody').innerHTML =
-        (title ? '<h1 class="ad-pv-title">' + esc(title) + '</h1>' : '') + out.html;
-    }, 180);
-  }
+    var paint = function () {
+      var v = (input.value || '').trim();
+      var img = opts.preview ? $(opts.preview) : null;
+      if (!img) return;
+      if (!v) { img.hidden = true; img.removeAttribute('src'); return; }
+      img.hidden = false;
+      img.src = /^https?:\/\//.test(v) ? v : (CFG.baseurl || '') + v;
+    };
+    paint();
+    input.addEventListener('input', paint);
 
-  /* ── 사이트 설정 ───────────────────────────────────── */
-  function loadSite() {
-    return getFile('site.config.json').then(function (r) {
-      siteCfg = JSON.parse(r.text);
-      siteSha = r.sha;
-      var a = siteCfg.author || {};
-      $('#sTitle').value = siteCfg.title || '';
-      $('#sSubtitle').value = siteCfg.subtitle || '';
-      $('#sDesc').value = siteCfg.description || '';
-      $('#sAuthorName').value = a.name || '';
-      $('#sBio').value = a.bio || '';
-      $('#sGithub').value = a.github || '';
-      $('#sEmail').value = a.email || '';
-      $('#sAvatar').value = a.avatar || '';
-      paintAvatar();
-      $('#sPerPage').value = siteCfg.perPage || 6;
-      var g = (siteCfg.comments && siteCfg.comments.giscus) || {};
-      $('#gRepoId').value = g.repoId || '';
-      $('#gCatId').value = g.categoryId || '';
-      var f = (siteCfg.realtime && siteCfg.realtime.firebase) || {};
-      $('#rDbUrl').value = f.databaseURL || '';
-    }).catch(fail);
-  }
-
-  $('#adSaveSite').addEventListener('click', function () {
-    if (!siteCfg) return;
-    siteCfg.title = $('#sTitle').value.trim();
-    siteCfg.subtitle = $('#sSubtitle').value.trim();
-    siteCfg.description = $('#sDesc').value.trim();
-    siteCfg.perPage = Number($('#sPerPage').value) || 6;
-    siteCfg.author = siteCfg.author || {};
-    siteCfg.author.name = $('#sAuthorName').value.trim();
-    siteCfg.author.bio = $('#sBio').value.trim();
-    siteCfg.author.github = $('#sGithub').value.trim();
-    siteCfg.author.avatar = $('#sAvatar').value.trim();
-
-    var email = $('#sEmail').value.trim();
-    if (email) siteCfg.author.email = email; else delete siteCfg.author.email;
-
-    siteCfg.comments = siteCfg.comments || {};
-    siteCfg.comments.giscus = siteCfg.comments.giscus || {};
-    siteCfg.comments.giscus.repoId = $('#gRepoId').value.trim();
-    siteCfg.comments.giscus.categoryId = $('#gCatId').value.trim();
-
-    siteCfg.realtime = siteCfg.realtime || {};
-    siteCfg.realtime.firebase = siteCfg.realtime.firebase || {};
-    siteCfg.realtime.firebase.databaseURL = $('#rDbUrl').value.trim();
-
-    say('설정을 저장하는 중…', 'busy');
-    putFile('site.config.json', JSON.stringify(siteCfg, null, 2) + '\n', '사이트 설정 변경', siteSha)
-      .then(function (r) { siteSha = r.content.sha; say('저장했습니다. 1~2분 뒤 반영됩니다.', 'ok'); })
-      .catch(fail);
-  });
-
-  /* ── 메뉴 · 공지 ───────────────────────────────────── */
-  function loadData() {
-    return Promise.all([getFile('data/nav.json'), getFile('data/notice.json')])
-      .then(function (r) {
-        navData = JSON.parse(r[0].text); navSha = r[0].sha;
-        noticeData = JSON.parse(r[1].text); noticeSha = r[1].sha;
-        renderRows();
+    pickBtn.addEventListener('click', function () { fileEl.click(); });
+    fileEl.addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      say('이미지를 올리는 중…', 'busy');
+      uploadImage(f, opts.prefix, opts.maxBytes).then(function (path) {
+        input.value = path;
+        paint();
+        say('올렸습니다. 이어서 “설정 저장”을 눌러주세요.', 'ok');
       }).catch(fail);
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        input.value = opts.clearValue === undefined ? '' : opts.clearValue;
+        paint();
+        say('“설정 저장”을 눌러야 반영됩니다.', 'info');
+      });
+    }
+    return paint;
   }
 
-  function renderRows() {
-    $('#adNoticeRows').innerHTML = noticeData.map(function (n, i) {
-      return '<li class="ad-rowitem">' +
-        '<input type="text" data-n="text" data-i="' + i + '" value="' + esc(n.text) + '" placeholder="공지 내용">' +
-        '<input type="text" data-n="url" data-i="' + i + '" value="' + esc(n.url) + '" placeholder="/posts/...">' +
-        '<input type="text" data-n="date" data-i="' + i + '" value="' + esc(n.date) + '" placeholder="2026-09-06">' +
-        '<button type="button" class="ad-x" data-rm-notice="' + i + '" aria-label="삭제">×</button></li>';
-    }).join('');
-
-    $('#adNavRows').innerHTML = navData.map(function (m, i) {
-      return '<li class="ad-rowitem">' +
-        '<input type="text" data-m="title" data-i="' + i + '" value="' + esc(m.title) + '" placeholder="메뉴 이름">' +
-        '<input type="text" data-m="url" data-i="' + i + '" value="' + esc(m.url) + '" placeholder="/archive/">' +
-        '<input type="text" data-m="icon" data-i="' + i + '" value="' + esc(m.icon) + '" placeholder="list">' +
-        '<button type="button" class="ad-x" data-rm-nav="' + i + '" aria-label="삭제">×</button></li>';
-    }).join('');
-  }
-
-  root.addEventListener('input', function (e) {
-    var t = e.target;
-    if (t.dataset.n !== undefined && t.dataset.i !== undefined) noticeData[+t.dataset.i][t.dataset.n] = t.value;
-    if (t.dataset.m !== undefined && t.dataset.i !== undefined) navData[+t.dataset.i][t.dataset.m] = t.value;
-  });
-
-  root.addEventListener('click', function (e) {
-    var rn = e.target.closest('[data-rm-notice]');
-    var rv = e.target.closest('[data-rm-nav]');
-    if (rn) { noticeData.splice(+rn.dataset.rmNotice, 1); renderRows(); }
-    if (rv) { navData.splice(+rv.dataset.rmNav, 1); renderRows(); }
-  });
-
-  $('#adAddNotice').addEventListener('click', function () {
-    noticeData.push({ text: '', url: '/', date: new Date().toISOString().slice(0, 10) });
-    renderRows();
-  });
-  $('#adAddNav').addEventListener('click', function () {
-    navData.push({ title: '', url: '/', icon: 'list' });
-    renderRows();
-  });
-
-  $('#adSaveData').addEventListener('click', function () {
-    say('저장하는 중…', 'busy');
-    putFile('data/notice.json', JSON.stringify(noticeData, null, 2) + '\n', '공지사항 수정', noticeSha)
-      .then(function (r) {
-        noticeSha = r.content.sha;
-        return putFile('data/nav.json', JSON.stringify(navData, null, 2) + '\n', '메뉴 수정', navSha);
-      })
-      .then(function (r) { navSha = r.content.sha; say('저장했습니다. 1~2분 뒤 반영됩니다.', 'ok'); })
-      .catch(fail);
-  });
-
-
-  /* ── 프로필 이미지 업로드 ──────────────────────────── */
   var AVATAR_MAX = 2 * 1024 * 1024;   // 2MB
   var avatarInput = $('#sAvatar');
 
   function paintAvatar() {
+    if (!avatarInput) return;
     var v = (avatarInput.value || '').trim();
-    var url = /^https?:\/\//.test(v) ? v : (CFG.baseurl || '') + (v || '/assets/img/avatar.svg');
-    $('#sAvatarPreview').src = url;
+    var img = $('#sAvatarPreview');
+    if (img) img.src = /^https?:\/\//.test(v) ? v : (CFG.baseurl || '') + (v || '/assets/img/avatar.svg');
   }
-  if (avatarInput) avatarInput.addEventListener('input', paintAvatar);
 
-  var pick = $('#sAvatarPick');
-  if (pick) {
-    pick.addEventListener('click', function () { $('#sAvatarFile').click(); });
+  wireUpload({
+    pick: '#sAvatarPick', file: '#sAvatarFile', input: '#sAvatar', preview: '#sAvatarPreview',
+    clear: '#sAvatarReset', clearValue: '/assets/img/avatar.svg',
+    prefix: 'avatar', maxBytes: AVATAR_MAX,
+  });
+  wireUpload({
+    pick: '#bMarkPick', file: '#bMarkFile', input: '#bMarkImage', preview: '#bMarkPreview',
+    clear: '#bMarkClear', prefix: 'logo', maxBytes: AVATAR_MAX,
+  });
+  wireUpload({
+    pick: '#bHeroPick', file: '#bHeroFile', input: '#bHeroImage', preview: '#bHeroPreview',
+    clear: '#bHeroClear', prefix: 'hero', maxBytes: 4 * 1024 * 1024,
+  });
 
-    $('#sAvatarReset').addEventListener('click', function () {
-      avatarInput.value = '/assets/img/avatar.svg';
-      paintAvatar();
-      say('기본 이미지로 되돌렸습니다. “설정 저장”을 눌러야 반영됩니다.', 'info');
-    });
-
-    $('#sAvatarFile').addEventListener('change', function (e) {
-      var file = e.target.files && e.target.files[0];
-      if (!file) return;
-      if (file.size > AVATAR_MAX) {
-        say('이미지가 너무 큽니다 (' + Math.round(file.size / 1024) + 'KB). 2MB 이하로 줄여주세요.', 'error');
-        e.target.value = '';
-        return;
-      }
-
-      var ext = ({
-        'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
-        'image/gif': 'gif', 'image/svg+xml': 'svg',
-      })[file.type];
-      if (!ext) { say('지원하지 않는 형식입니다: ' + file.type, 'error'); e.target.value = ''; return; }
-
-      var name = 'avatar-' + Date.now() + '.' + ext;
-      var repoPath = 'static/img/' + name;
-
-      say('이미지를 올리는 중…', 'busy');
-      var reader = new FileReader();
-      reader.onload = function () {
-        // data URL 의 base64 부분만 잘라 그대로 올린다 (바이너리 그대로 보존)
-        var b64 = String(reader.result).split(',')[1];
-        GH.call('/repos/' + REPO + '/contents/' + encodeURI(repoPath), {
-          method: 'PUT',
-          body: { message: '프로필 이미지 변경', content: b64, branch: 'main' },
-        }).then(function () {
-          avatarInput.value = '/assets/img/' + name;
-          paintAvatar();
-          say('올렸습니다. 이어서 “설정 저장”을 눌러주세요.', 'ok');
-        }).catch(fail);
-      };
-      reader.onerror = function () { say('파일을 읽지 못했습니다.', 'error'); };
-      reader.readAsDataURL(file);
-      e.target.value = '';
-    });
+  var overlay = $('#bHeroOverlay');
+  if (overlay) {
+    overlay.addEventListener('input', function () { $('#bOverlayVal').textContent = overlay.value; });
   }
 
   /* ── 태그 전체 관리 (이름 변경 · 삭제) ─────────────── */
@@ -655,16 +433,83 @@
     });
   }
 
+  /* ── 인기 검색어 · 채팅 관리 ───────────────────────── */
+  var Store = window.GaonStore;
+
+  function renderTrends() {
+    var ol = $('#adTrendList');
+    if (!ol || !Store) return;
+    Store.getTrends(30).then(function (list) {
+      $('#adTrendCount').textContent = list.length + '개';
+      if (!list.length) { ol.innerHTML = '<li class="ad-empty">아직 검색 기록이 없습니다.</li>'; return; }
+      ol.innerHTML = list.map(function (t) {
+        return '<li class="ad-trenditem">' +
+          '<span class="rk">' + t.rank + '</span>' +
+          '<b>' + esc(t.kw) + '</b>' +
+          '<em>' + t.score + '점</em>' +
+          '<button type="button" class="btn-line danger" data-trend-del="' + esc(t.kw) + '">삭제</button>' +
+          '</li>';
+      }).join('');
+    });
+  }
+
+  var trendList = $('#adTrendList');
+  if (trendList) {
+    trendList.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-trend-del]');
+      if (!b || !Store) return;
+      Store.removeTrend(b.dataset.trendDel).then(function () {
+        say('“' + b.dataset.trendDel + '” 을 지웠습니다.', 'ok');
+        renderTrends();
+      });
+    });
+  }
+
+  var trendClear = $('#adTrendClear');
+  if (trendClear) {
+    trendClear.addEventListener('click', function () {
+      confirmBox('검색어를 전부 비울까요?', '집계된 인기 검색어가 모두 사라집니다. 되돌릴 수 없습니다.')
+        .then(function (yes) {
+          if (!yes || !Store) return;
+          Store.clearTrends().then(function () { say('검색어를 모두 비웠습니다.', 'ok'); renderTrends(); });
+        });
+    });
+  }
+
+  var chatClear = $('#adChatClear');
+  if (chatClear) {
+    chatClear.addEventListener('click', function () {
+      confirmBox('대화를 전부 지울까요?', '채팅방의 메시지와 이미지가 모두 삭제됩니다. 되돌릴 수 없습니다.')
+        .then(function (yes) {
+          if (!yes || !Store) return;
+          Store.chat.clearAll().then(function () { say('대화를 모두 지웠습니다.', 'ok'); paintUsage(); });
+        });
+    });
+  }
+
+  var liveReload = $('#adLiveReload');
+  if (liveReload) liveReload.addEventListener('click', function () { renderTrends(); paintUsage(); });
+
+  function paintUsage() {
+    var el = $('#adChatUsage');
+    if (!el || !Store) return;
+    var q = Store.chat.myQuota();
+    var lim = Store.limits || {};
+    el.innerHTML = '저장 방식: <b>' + (Store.remote ? '실시간 DB (모든 방문자 공유)' : '이 브라우저에만 (로컬 모드)') + '</b><br>' +
+      '이미지 한도 — 1장 ' + Math.round((lim.maxBytes || 0) / 1024) + 'KB · ' +
+      '사람당 ' + Math.round((lim.perUserBytes || 0) / 1048576) + 'MB / ' + (lim.perUserCount || 0) + '장 · ' +
+      '전체 ' + Math.round((lim.totalBytes || 0) / 1048576) + 'MB';
+  }
+
+  renderTrends();
+  paintUsage();
+
   /** 블로그 화면의 "새 글 / 수정" 버튼에서 넘어온 요청을 처리한다. */
   function applyQuery() {
     var q = new URLSearchParams(location.search);
-    if (q.get('new') !== null) { openEditor(null); cleanUrl(); return; }
+    if (q.get('new') !== null) { openEditor(null); return; }
     var target = q.get('edit');
-    if (!target) return;
-    var found = posts.filter(function (p) { return p.path === target; })[0];
-    if (found) openEditor(found);
-    else say('그 글을 찾지 못했습니다: ' + target, 'error');
-    cleanUrl();
+    if (target) { location.href = (CFG.baseurl || '') + '/write/?edit=' + encodeURIComponent(target); }
   }
   function cleanUrl() {
     history.replaceState(null, '', location.pathname);

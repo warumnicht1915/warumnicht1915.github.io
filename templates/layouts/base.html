@@ -16,11 +16,12 @@
 <div class="nav-dim" id="navDim" hidden></div>
 
 <script src="{{ "/assets/js/config.js" | url }}"></script>
+<!-- gh.js 는 관리자 여부를 판단하는 기준이라 다른 스크립트보다 먼저 와야 한다 -->
+<script src="{{ "/assets/js/gh.js" | url }}" defer></script>
 <script src="{{ "/assets/js/core.js" | url }}" defer></script>
 <script src="{{ "/assets/js/store.js" | url }}" defer></script>
 <script src="{{ "/assets/js/widgets.js" | url }}" defer></script>
 <script src="{{ "/assets/js/chat.js" | url }}" defer></script>
-<script src="{{ "/assets/js/gh.js" | url }}" defer></script>
 <script src="{{ "/assets/js/owner.js" | url }}" defer></script>
 {% if page.kind == "post" %}<script src="{{ "/assets/js/post.js" | url }}" defer></script>{% end %}
 {% if page.script %}<script src="{{ page.script | url }}" defer></script>{% end %}

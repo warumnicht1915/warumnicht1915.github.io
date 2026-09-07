@@ -37,9 +37,19 @@
       "projectId": ""
     },
     "room": "main",
-    "maxMessages": 100,
-    "nickMaxLength": 12,
-    "textMaxLength": 300
+    "chat": {
+      "maxMessages": 100,
+      "nickMaxLength": 12,
+      "textMaxLength": 300,
+      "image": {
+        "enabled": true,
+        "maxWidth": 900,
+        "maxBytes": 160000,
+        "perUserBytes": 3000000,
+        "perUserCount": 20,
+        "totalBytes": 60000000
+      }
+    }
   },
   "counter": {
     "enabled": true,
@@ -49,5 +59,18 @@
     "trendsSize": 10,
     "recentSize": 5,
     "popularSize": 6
+  },
+  "brand": {
+    "mark": "W",
+    "markImage": "",
+    "heroTitle": "",
+    "heroWords": [
+      "생성",
+      "기록",
+      "공유"
+    ],
+    "heroImage": "",
+    "heroOverlay": 55,
+    "heroGradient": "linear-gradient(135deg, #2f4fd8 0%, #4c6ef5 45%, #8b5cf6 100%)"
   }
 }

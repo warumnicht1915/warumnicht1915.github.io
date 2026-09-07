@@ -2,7 +2,11 @@
 <header class="site-header" id="siteHeader">
   <div class="wrap head-in">
     <a class="brand" href="{{ "/" | url }}">
-      <span class="brand-mark" aria-hidden="true">W</span>
+      {% if site.brand.markImage %}
+      <img class="brand-mark img" src="{{ site.brand.markImage | url }}" alt="" width="34" height="34">
+      {% else %}
+      <span class="brand-mark" aria-hidden="true">{{ site.brand.mark | default: "W" }}</span>
+      {% end %}
       <span class="brand-txt"><b>{{ site.title }}</b><em>{{ site.subtitle }}</em></span>
     </a>
 
