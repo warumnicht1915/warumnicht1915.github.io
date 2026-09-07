@@ -1,0 +1,135 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "views": {
+      ".read": true,
+      "$post": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+      }
+    },
+    "visits": {
+      ".read": true,
+      "days": {
+        "$day": {
+          "$kind": {
+            ".write": "auth != null",
+            ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+          }
+        }
+      },
+      "total": {
+        "$kind": {
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+        }
+      }
+    },
+    "trends": {
+      ".read": true,
+      "$kw": {
+        ".write": "auth != null",
+        "kw": {
+          ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "n": {
+          ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "presence": {
+      ".read": true,
+      "$room": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChild('at') && newData.child('at').isNumber()"
+        }
+      }
+    },
+    "comments": {
+      ".read": true,
+      "$page": {
+        "$id": {
+          ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+          ".validate": "newData.hasChildren(['n','t','at','uid']) || newData.hasChild('del')",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "t": {
+            ".validate": "newData.isString() && newData.val().length <= 1500"
+          },
+          "at": {
+            ".validate": "newData.isNumber()"
+          },
+          "uid": {
+            ".validate": "newData.val() === auth.uid || newData.val() === data.val()"
+          },
+          "p": {
+            ".validate": "newData.isString()"
+          },
+          "del": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "rooms": {
+      "$room": {
+        "usage": {
+          ".read": true,
+          ".write": "auth != null"
+        },
+        "messages": {
+          ".read": true,
+          "$msg": {
+            ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+            ".validate": "newData.hasChildren(['n','at','uid']) || newData.hasChild('del')",
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "t": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "at": {
+              ".validate": "newData.isNumber()"
+            },
+            "uid": {
+              ".validate": "newData.val() === auth.uid || newData.val() === data.val()"
+            },
+            "img": {
+              ".validate": "newData.isString() && newData.val().length <= 220000"
+            },
+            "iw": {
+              ".validate": "newData.isNumber()"
+            },
+            "ih": {
+              ".validate": "newData.isNumber()"
+            },
+            "ib": {
+              ".validate": "newData.isNumber()"
+            },
+            "del": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

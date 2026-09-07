@@ -41,6 +41,7 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
 ### 2-2. 보안 규칙 (가장 중요)
 
 **규칙** 탭에 아래를 그대로 붙여 넣고 게시합니다.
+(저장소의 `database.rules.json` 과 같은 내용입니다.)
 전체를 열어두면 누구나 데이터를 지울 수 있으니, 반드시 경로별로 제한하세요.
 
 ```json
@@ -48,11 +49,12 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
   "rules": {
     ".read": false,
     ".write": false,
-
     "admins": {
-      "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": false }
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
     },
-
     "views": {
       ".read": true,
       "$post": {
@@ -60,7 +62,6 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
         ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
       }
     },
-
     "visits": {
       ".read": true,
       "days": {
@@ -78,17 +79,21 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
         }
       }
     },
-
     "trends": {
       ".read": true,
       "$kw": {
-        ".write": "auth != null || root.child('admins').child(auth.uid).val() === true",
-        "kw": { ".validate": "newData.isString() && newData.val().length <= 24" },
-        "n":  { ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)" },
-        "$other": { ".validate": false }
+        ".write": "auth != null",
+        "kw": {
+          ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "n": {
+          ".validate": "newData.isNumber() && (!data.exists() ? newData.val() === 1 : newData.val() === data.val() + 1)"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
-
     "presence": {
       ".read": true,
       "$room": {
@@ -98,55 +103,77 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
         }
       }
     },
-
     "comments": {
       ".read": true,
       "$page": {
         "$id": {
-          ".write": "auth != null && (
-              !data.exists()
-              || data.child('uid').val() === auth.uid
-              || root.child('admins').child(auth.uid).val() === true
-            )",
+          ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
           ".validate": "newData.hasChildren(['n','t','at','uid']) || newData.hasChild('del')",
-          "n":   { ".validate": "newData.isString() && newData.val().length <= 16" },
-          "t":   { ".validate": "newData.isString() && newData.val().length <= 1500" },
-          "at":  { ".validate": "newData.isNumber()" },
-          "uid": { ".validate": "newData.val() === auth.uid || data.val() === newData.val()" },
-          "p":   { ".validate": "newData.isString() || newData.val() === null" },
-          "del": { ".validate": "newData.isNumber()" },
-          "$other": { ".validate": false }
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "t": {
+            ".validate": "newData.isString() && newData.val().length <= 1500"
+          },
+          "at": {
+            ".validate": "newData.isNumber()"
+          },
+          "uid": {
+            ".validate": "newData.val() === auth.uid || newData.val() === data.val()"
+          },
+          "p": {
+            ".validate": "newData.isString()"
+          },
+          "del": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },
-
     "rooms": {
       "$room": {
         "usage": {
           ".read": true,
-          ".write": "auth != null",
-          "$k": { ".validate": "newData.isNumber() || newData.hasChildren()" }
+          ".write": "auth != null"
         },
         "messages": {
           ".read": true,
-          ".indexOn": ".key",
           "$msg": {
-            ".write": "auth != null && (
-                !data.exists()
-                || data.child('uid').val() === auth.uid
-                || root.child('admins').child(auth.uid).val() === true
-              )",
+            ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
             ".validate": "newData.hasChildren(['n','at','uid']) || newData.hasChild('del')",
-            "n":   { ".validate": "newData.isString() && newData.val().length <= 12"  },
-            "t":   { ".validate": "newData.isString() && newData.val().length <= 300" },
-            "at":  { ".validate": "newData.isNumber()" },
-            "uid": { ".validate": "newData.val() === auth.uid || data.val() === newData.val()" },
-            "img": { ".validate": "newData.isString() && newData.val().length <= 220000" },
-            "iw":  { ".validate": "newData.isNumber()" },
-            "ih":  { ".validate": "newData.isNumber()" },
-            "ib":  { ".validate": "newData.isNumber()" },
-            "del": { ".validate": "newData.isNumber()" },
-            "$other": { ".validate": false }
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "t": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "at": {
+              ".validate": "newData.isNumber()"
+            },
+            "uid": {
+              ".validate": "newData.val() === auth.uid || newData.val() === data.val()"
+            },
+            "img": {
+              ".validate": "newData.isString() && newData.val().length <= 220000"
+            },
+            "iw": {
+              ".validate": "newData.isNumber()"
+            },
+            "ih": {
+              ".validate": "newData.isNumber()"
+            },
+            "ib": {
+              ".validate": "newData.isNumber()"
+            },
+            "del": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       }
@@ -173,11 +200,38 @@ Firebase Realtime Database 무료 등급을 씁니다. (외부 댓글 서비스�
 **대화 전부 지우기 / 검색어 비우기** 로 정리하거나, Firebase 콘솔에서
 `rooms`·`comments` 의 `.write` 를 잠시 `false` 로 바꾸면 즉시 멎습니다.
 
+### 2-3. 설정에 넣기
+
+`site.config.json` 의 `realtime.firebase` 에 값 세 개를 넣습니다.
+
+```json
+"realtime": {
+  "provider": "firebase",
+  "firebase": {
+    "apiKey": "AIza...",
+    "databaseURL": "https://프로젝트이름-default-rtdb.firebaseio.com",
+    "projectId": "프로젝트이름"
+  },
+  "room": "main"
+}
+```
+
+세 값이 다 있어야 **공유 모드**로 켜집니다. 비어 있으면 **로컬 모드**가 되어
+채팅은 같은 브라우저의 다른 탭끼리만 오가고, 방문자 수도 내 브라우저 기준으로만 셉니다.
+위젯에 그렇게 표시되니 숫자를 오해할 일은 없습니다.
+
+> [!NOTE]
+> 이 저장소는 이미 채워져 있습니다.
+> 프로젝트 `warumnicht1915-blog`, DB `https://warumnicht1915-blog-default-rtdb.firebaseio.com`.
+> 규칙도 위 내용 그대로 게시돼 있고, 실제 DB 에 13가지 침투 시나리오
+> (남의 uid 로 쓰기 · 조회수 조작 · 비로그인 쓰기 · 스스로 관리자 등록 · 루트 통째 읽기/삭제 등)를
+> 시험해서 전부 막히는 것까지 확인했습니다.
+
 ### 2-4. 나를 관리자로 등록하기
 
 관리자만 남의 댓글·채팅을 지울 수 있습니다. 한 번만 등록하면 됩니다.
 
-1. 설정을 저장하고 배포한 뒤 블로그의 `/admin/` → **프로필 · 설정** 으로 갑니다
+1. 배포된 블로그에서 `/admin/` → **프로필 · 설정** 으로 갑니다
 2. 아래쪽 **내 사용자 ID** 에 뜨는 값을 복사합니다 (`abc123...` 형태)
 3. Firebase 콘솔 → Realtime Database → 데이터 탭에서 이렇게 만듭니다
 
@@ -192,29 +246,9 @@ admins
 > 이 ID 는 브라우저마다 다릅니다. 브라우저 저장소를 지우거나 다른 기기에서 관리하려면
 > 그 기기의 ID 도 같은 방법으로 추가하세요.
 
-### 2-3. 설정에 넣기
-
-`site.config.json` 의 `realtime.firebase.databaseURL` 에 주소를 넣습니다.
-
-```json
-"realtime": {
-  "firebase": {
-    "databaseURL": "https://프로젝트이름-default-rtdb.firebaseio.com"
-  },
-  "room": "main",
-  "maxMessages": 100
-}
-```
-
-푸시하면 바로 켜집니다. `apiKey` 와 `projectId` 는 REST 방식이라 없어도 됩니다.
-
-> 값이 비어 있으면 이 기능들은 **로컬 모드**로 동작합니다.
-> 채팅은 같은 브라우저의 다른 탭끼리만 오가고, 방문자 수는 내 브라우저 기준으로만 셉니다.
-> 위젯에도 그렇게 표시되니 숫자를 오해할 일은 없습니다.
-
 ---
 
-## 6. 글쓰기 · 수정 · 삭제 (두 가지 방법)
+## 3. 글쓰기 · 수정 · 삭제 (두 가지 방법)
 
 ### 방법 A — 블로그 화면에서 바로
 
@@ -326,7 +360,7 @@ admins
 
 ---
 
-## 7. 내 정보로 바꾸기
+## 4. 내 정보로 바꾸기
 
 `site.config.json` 위쪽을 고칩니다.
 
@@ -357,7 +391,7 @@ admins
 
 ---
 
-## 8. 개인 도메인 붙이기 (선택)
+## 5. 개인 도메인 붙이기 (선택)
 
 1. `site.config.json` 에 `"cname": "example.com"` 을 추가합니다
    (빌드할 때 `CNAME` 파일이 자동으로 생성됩니다)

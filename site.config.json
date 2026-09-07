@@ -23,9 +23,9 @@
   "realtime": {
     "provider": "firebase",
     "firebase": {
-      "apiKey": "",
-      "databaseURL": "",
-      "projectId": ""
+      "apiKey": "AIzaSyBmvdZLv3qdItL6Tna5PTgjkKN6vBxlKiU",
+      "databaseURL": "https://warumnicht1915-blog-default-rtdb.firebaseio.com",
+      "projectId": "warumnicht1915-blog"
     },
     "room": "main",
     "chat": {
